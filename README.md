@@ -13,6 +13,11 @@
 Protótipo em miniatura de um robô garçom controlado pelo navegador, com **vídeo ao vivo** e **controle em tempo real**, construído com uma **ESP32-CAM** de baixo custo (~R$ 250 em peças). A próxima etapa é transformá-lo num **garçom autônomo**, que segue uma fita no chão, para na mesa certa e volta para a base.
 
 <p align="center">
+  <img src="docs/imagens/modelo_3d.gif" alt="Modelo 3D do Bandejito girando: primeiro com a carcaça, depois por dentro, mostrando chassi, bateria, placas e fiação" width="420"><br>
+  <em>Modelo 3D completo (carcaça + eletrônica), gerado por código a partir de um arquivo de medidas.</em>
+</p>
+
+<p align="center">
   <img src="docs/imagens/simulador_autonomo.gif" alt="Simulador: o robô recebe um pedido, segue a fita até a mesa 2 e volta para a base" width="480"><br>
   <em>Simulador: o robô recebe um pedido pelo celular, segue a fita até a mesa 2 e volta para a base.</em>
 </p>
