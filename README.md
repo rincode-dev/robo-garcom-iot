@@ -18,8 +18,8 @@ Protótipo em miniatura de um robô garçom controlado pelo navegador, com **ví
 </p>
 
 <p align="center">
-  <img src="docs/imagens/simulador_autonomo.gif" alt="Simulador: o robô recebe um pedido, segue a linha até a mesa 2, dá meia-volta e volta para o balcão" width="560"><br>
-  <em>Simulador: o robô recebe um pedido pelo celular, segue a linha até a mesa 2, dá meia-volta (roxo) e volta para o balcão.</em>
+  <img src="docs/imagens/simulador_autonomo.gif" alt="Teste completo no simulador: pedido para a Mesa 3, pessoa no caminho, entrega, meia-volta e volta ao balcão" width="600"><br>
+  <em>Teste completo no simulador: pedido para a Mesa 3, uma pessoa entra no caminho (o robô freia e espera), entrega, meia-volta e volta ao balcão.</em>
 </p>
 
 ## O que ele faz
