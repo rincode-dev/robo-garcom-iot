@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carcaça do Robô Garçom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: folha de oficina — coluna única, desenhos técnicos em mm, peças impressas em cor de filamento PLA */
+:root {
+  --paper: #eef1f4;
+  --sheet: #fbfcfd;
+  --ink: #1d2a3a;
+  --muted: #5b6878;
+  --line: #c9d1da;
+  --hw: #d9dee4;          /* peças que você já tem (chassi, rodas) */
+  --pla: #d9561f;         /* peças impressas */
+  --pla-soft: #f8d9c8;
+  --screen: #22303f;
+  --good: #2f7d4f;
+  --warn: #b5730c;
+  --bad: #b23a3a;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12171d; --sheet: #1a2129; --ink: #e4e9ef; --muted: #9aa6b3; --line: #33404d;
+    --hw: #2b3540; --pla: #f07a45; --pla-soft: #4a2a1c; --screen: #0a0e13;
+    --good: #5cbf85; --warn: #e3a541; --bad: #e57373; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12171d; --sheet: #1a2129; --ink: #e4e9ef; --muted: #9aa6b3; --line: #33404d;
+  --hw: #2b3540; --pla: #f07a45; --pla-soft: #4a2a1c; --screen: #0a0e13;
+  --good: #5cbf85; --warn: #e3a541; --bad: #e57373; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.6;
+  padding-inline: 16px; padding-block: 32px 64px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.1; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.45rem; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--pla); }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--pla); outline-offset: 2px; }
+.eyebrow { font-family: var(--f-mono); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 20px; }
+.mono { font-family: var(--f-mono); font-size: .92em; }
+
+header { display: flex; flex-direction: column; gap: 14px; border-bottom: 2px solid var(--ink); padding-bottom: 28px; }
+header .lead { font-size: 1.15rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: .9rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 18px; height: 12px; border-radius: 2px; border: 1.5px solid; display: inline-block; }
+.sw.pla { background: var(--pla-soft); border-color: var(--pla); }
+.sw.hw { background: var(--hw); border-color: var(--ink); }
+
+/* regras */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.rule { background: var(--sheet); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rule:last-child { grid-column: 1 / -1; }
+.rule b { font-weight: 600; }
+.rule p { font-size: .95rem; color: var(--muted); }
+
+/* conceitos */
+.concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.concept { background: var(--sheet); border: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.concept.rec { border: 2px solid var(--pla); }
+.concept figure { margin: 0; border-bottom: 1px solid var(--line); background:
+  repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--line) 45%, transparent) 19px 20px),
+  repeating-linear-gradient(90deg, transparent 0 19px, color-mix(in srgb, var(--line) 45%, transparent) 19px 20px); }
+.concept svg { display: block; width: 100%; height: auto; }
+.concept .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { font-family: var(--f-mono); font-size: .75rem; padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); white-space: nowrap; }
+.tag.easy { color: var(--good); border-color: currentColor; }
+.tag.mid { color: var(--warn); border-color: currentColor; }
+.tag.hard { color: var(--bad); border-color: currentColor; }
+.tag.star { color: var(--sheet); background: var(--pla); border-color: var(--pla); }
+.concept ul { margin: 0; padding-left: 18px; font-size: .93rem; display: flex; flex-direction: column; gap: 4px; }
+.pc { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pc h4 { margin: 0 0 4px; font-family: var(--f-mono); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+
+/* svg tokens */
+.s-pla { fill: var(--pla-soft); stroke: var(--pla); stroke-width: 2; }
+.s-pla-line { fill: none; stroke: var(--pla); stroke-width: 2; }
+.s-hw { fill: var(--hw); stroke: var(--ink); stroke-width: 1.5; }
+.s-ink { fill: var(--ink); }
+.s-inkline { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.s-screen { fill: var(--screen); stroke: var(--ink); stroke-width: 1.5; }
+.s-lens { fill: var(--sheet); stroke: var(--pla); stroke-width: 2; }
+.s-dash { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.s-ground { stroke: var(--muted); stroke-width: 1.5; }
+.s-sheet { fill: var(--sheet); }
+.s-board { fill: var(--good); opacity: .85; stroke: var(--ink); stroke-width: 1.2; }
+.s-text { fill: var(--ink); font-family: var(--f-mono); font-size: 12px; }
+.s-textmuted { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; }
+.s-num { fill: var(--pla); }
+.s-numtext { fill: var(--sheet); font-family: var(--f-mono); font-size: 13px; font-weight: 500; }
+.s-cone { fill: var(--pla); opacity: .12; }
+
+/* vista explodida */
+.drawing { background: var(--sheet); border: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+.drawing .art { padding: 12px; border-right: 1px solid var(--line); }
+.drawing svg { display: block; width: 100%; height: auto; }
+.drawing ol { margin: 0; padding: 20px 22px; list-style: none; display: flex; flex-direction: column; gap: 14px; counter-reset: n; }
+.drawing li { display: grid; grid-template-columns: 28px 1fr; gap: 10px; font-size: .95rem; }
+.drawing li::before { counter-increment: n; content: counter(n); width: 24px; height: 24px; border-radius: 50%; background: var(--pla); color: var(--sheet); font-family: var(--f-mono); font-size: .8rem; display: grid; place-items: center; margin-top: 2px; }
+.drawing li b { display: block; }
+.drawing li span { color: var(--muted); }
+@media (max-width: 720px) {
+  .drawing { grid-template-columns: 1fr; }
+  .drawing .art { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+
+/* passos */
+.steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0; border-left: 2px solid var(--ink); }
+.steps li { padding: 0 0 26px 26px; position: relative; display: flex; flex-direction: column; gap: 6px; }
+.steps li:last-child { padding-bottom: 0; }
+.steps li::before { content: attr(data-n); position: absolute; left: -15px; top: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); font-family: var(--f-mono); font-size: .8rem; display: grid; place-items: center; }
+.steps .who { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--pla); }
+.steps ul { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: .95rem; }
+
+/* tabelas */
+.tbl { overflow-x: auto; border: 1px solid var(--line); background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-mono); font-weight: 500; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.v { font-family: var(--f-mono); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.two > div { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.note { border-left: 3px solid var(--warn); padding: 10px 16px; background: var(--sheet); font-size: .95rem; }
+footer { color: var(--muted); font-size: .88rem; border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 420px) { .pc { grid-template-columns: 1fr; } }
+
+@page { size: A4; margin: 12mm; }
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { padding-block: 0; font-size: 13px; }
+  .wrap { gap: 28px; }
+  .concepts { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .concept .body { padding: 10px 12px; }
+  .rule, .concept, .drawing, .steps li, .tbl, .note, tr, h2, h3 { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+  a { color: var(--ink); }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <span class="eyebrow">Robô Garçom IoT · Fase 3,5 (opcional) · impressão 3D</span>
+  <h1>Carcaça impressa para o robô garçom</h1>
+  <p class="lead">Dá para fazer, e vale a pena para o portfólio. A ideia é imprimir uma “roupa” que se encaixa por cima do chassi de acrílico, <b>sem mudar nada da eletrônica nem do código</b>. O robô continua sendo montado igual ao manual; a carcaça entra por último.</p>
+  <div class="legend">
+    <span><i class="sw pla"></i> peça impressa na 3D</span>
+    <span><i class="sw hw"></i> peça que você já comprou</span>
+    <span class="mono">medidas em mm · chassi ≈ 150 × 210</span>
+  </div>
+</header>
+
+<section>
+  <span class="eyebrow">Antes de desenhar</span>
+  <h2>Sete regras que a carcaça precisa respeitar</h2>
+  <div class="rules">
+    <div class="rule"><b>1. Janela para a câmera</b><p>Um furo de ~10 mm bem na frente da lente. Plástico na frente da lente deixa a imagem embaçada.</p></div>
+    <div class="rule"><b>2. Janela para o flash</b><p>O LED de flash (GPIO4) fica do mesmo lado da câmera. Deixe um furo de ~5 mm ou ele só vai iluminar o lado de dentro.</p></div>
+    <div class="rule"><b>3. Nada de metal perto da antena</b><p>PLA não atrapalha o Wi-Fi. Tinta metálica, papel-alumínio ou adesivo cromado na cabeça atrapalham.</p></div>
+    <div class="rule"><b>4. Ventilação</b><p>A ESP32-CAM, o regulador LM2596 e o driver esquentam. Faça frestas no topo da cabeça e nas laterais da base.</p></div>
+    <div class="rule"><b>5. Acesso fácil às baterias</b><p>As 18650 saem do robô para carregar. A carcaça tem que sair sem ferramenta (ímãs) ou ter uma tampa traseira.</p></div>
+    <div class="rule"><b>6. Chave liga/desliga acessível</b><p>Furo ou recorte em cima da chave do suporte de baterias. Desligar rápido é questão de segurança.</p></div>
+    <div class="rule"><b>7. Leve e com peso embaixo</b><p>Mantenha a carcaça abaixo de ~300 g. Robô alto e pesado em cima tomba nas curvas; as baterias ficam sempre no chassi, embaixo.</p></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Três caminhos · vista de frente, em escala</span>
+  <h2>Escolha um estilo</h2>
+  <p>Os três usam o mesmo chassi, as mesmas rodas e a mesma placa. Muda só o que vai por cima. As horas de impressão e os gramas são estimativas e dependem da impressora do seu amigo.</p>
+
+  <div class="concepts">
+
+    <!-- A: Bandeja baixa -->
+    <article class="concept">
+      <figure>
+        <svg viewBox="0 0 300 320" role="img" aria-label="Vista frontal do conceito Bandeja Baixa: carcaça baixa e larga com uma bandeja plana em cima e a câmera no para-choque">
+          <line x1="20" y1="300" x2="280" y2="300" class="s-ground"/>
+          <rect x="47" y="235" width="26" height="65" rx="6" class="s-hw"/>
+          <rect x="227" y="235" width="26" height="65" rx="6" class="s-hw"/>
+          <circle cx="150" cy="290" r="10" class="s-hw"/>
+          <rect x="70" y="205" width="160" height="63" rx="18" class="s-pla"/>
+          <line x1="88" y1="252" x2="112" y2="252" class="s-pla-line"/>
+          <line x1="88" y1="258" x2="112" y2="258" class="s-pla-line"/>
+          <line x1="188" y1="252" x2="212" y2="252" class="s-pla-line"/>
+          <line x1="188" y1="258" x2="212" y2="258" class="s-pla-line"/>
+          <rect x="126" y="216" width="48" height="26" rx="8" class="s-screen"/>
+          <circle cx="146" cy="229" r="7" class="s-lens"/>
+          <circle cx="146" cy="229" r="2.5" class="s-ink"/>
+          <circle cx="164" cy="229" r="3" class="s-lens"/>
+          <rect x="60" y="192" width="180" height="8" rx="3" class="s-pla"/>
+          <rect x="60" y="184" width="6" height="12" rx="2" class="s-pla"/>
+          <rect x="234" y="184" width="6" height="12" rx="2" class="s-pla"/>
+          <path d="M134 152 L166 152 L162 192 L138 192 Z" class="s-hw"/>
+          <text x="150" y="40" text-anchor="middle" class="s-textmuted">altura total ≈ 110 mm</text>
+          <line x1="268" y1="192" x2="268" y2="300" class="s-dash"/>
+        </svg>
+      </figure>
+      <div class="body">
+        <h3>A · Bandeja Baixa</h3>
+        <div class="tags"><span class="tag easy">fácil</span><span class="tag">~5–8 h</span><span class="tag">~100–150 g</span></div>
+        <p>Uma tampa arredondada sobre o chassi, com bandeja plana em cima e a câmera no “para-choque”.</p>
+        <div class="pc">
+          <div><h4>Prós</h4><ul><li>Muito estável</li><li>Uma ou duas peças</li><li>Ótima para o 1º desenho</li></ul></div>
+          <div><h4>Contras</h4><ul><li>Câmera baixa, vê pouco à frente</li><li>Parece mais carrinho que garçom</li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- B: Torre de serviço -->
+    <article class="concept rec">
+      <figure>
+        <svg viewBox="0 0 300 320" role="img" aria-label="Vista frontal do conceito Torre de Serviço: base larga, coluna central, duas bandejas e cabeça com tela onde a câmera é o olho">
+          <line x1="20" y1="300" x2="280" y2="300" class="s-ground"/>
+          <rect x="47" y="235" width="26" height="65" rx="6" class="s-hw"/>
+          <rect x="227" y="235" width="26" height="65" rx="6" class="s-hw"/>
+          <circle cx="150" cy="290" r="10" class="s-hw"/>
+          <rect x="70" y="222" width="160" height="46" rx="22" class="s-pla"/>
+          <line x1="92" y1="250" x2="116" y2="250" class="s-pla-line"/>
+          <line x1="184" y1="250" x2="208" y2="250" class="s-pla-line"/>
+          <rect x="136" y="146" width="28" height="78" class="s-pla"/>
+          <rect x="62" y="200" width="176" height="7" rx="3" class="s-pla"/>
+          <rect x="62" y="193" width="5" height="10" rx="2" class="s-pla"/>
+          <rect x="233" y="193" width="5" height="10" rx="2" class="s-pla"/>
+          <rect x="82" y="162" width="136" height="6" rx="3" class="s-pla"/>
+          <rect x="82" y="156" width="5" height="9" rx="2" class="s-pla"/>
+          <rect x="213" y="156" width="5" height="9" rx="2" class="s-pla"/>
+          <path d="M84 200 L90 178 L104 178 L110 200 Z" class="s-hw"/>
+          <rect x="108" y="86" width="84" height="62" rx="24" class="s-pla"/>
+          <rect x="118" y="96" width="64" height="42" rx="16" class="s-screen"/>
+          <circle cx="150" cy="117" r="8" class="s-lens"/>
+          <circle cx="150" cy="117" r="3" class="s-ink"/>
+          <circle cx="170" cy="106" r="3" class="s-lens"/>
+          <line x1="132" y1="90" x2="140" y2="90" class="s-pla-line"/>
+          <line x1="146" y1="90" x2="154" y2="90" class="s-pla-line"/>
+          <line x1="160" y1="90" x2="168" y2="90" class="s-pla-line"/>
+          <text x="150" y="40" text-anchor="middle" class="s-textmuted">altura total ≈ 215 mm</text>
+          <line x1="268" y1="86" x2="268" y2="300" class="s-dash"/>
+        </svg>
+      </figure>
+      <div class="body">
+        <h3>B · Torre de Serviço</h3>
+        <div class="tags"><span class="tag star">recomendado</span><span class="tag mid">média</span><span class="tag">~12–18 h</span><span class="tag">~200–280 g</span></div>
+        <p>O visual dos robôs garçons de restaurante de verdade: base, coluna, duas bandejas e uma cabeça com “rosto”, onde a lente da câmera vira o olho.</p>
+        <div class="pc">
+          <div><h4>Prós</h4><ul><li>Câmera alta, vê o salão</li><li>Peças separadas cabem em qualquer impressora</li><li>Reconhecível na hora</li></ul></div>
+          <div><h4>Contras</h4><ul><li>Mais peças para encaixar</li><li>Fios passam pela coluna oca</li></ul></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- C: Mascote -->
+    <article class="concept">
+      <figure>
+        <svg viewBox="0 0 300 320" role="img" aria-label="Vista frontal do conceito Garçom Mascote: personagem de smoking com gravata-borboleta, cabeça redonda com a câmera como olho e um braço segurando uma bandeja">
+          <line x1="20" y1="300" x2="280" y2="300" class="s-ground"/>
+          <rect x="47" y="235" width="26" height="65" rx="6" class="s-hw"/>
+          <rect x="227" y="235" width="26" height="65" rx="6" class="s-hw"/>
+          <circle cx="150" cy="290" r="10" class="s-hw"/>
+          <rect x="72" y="244" width="156" height="24" rx="10" class="s-pla"/>
+          <line x1="213" y1="196" x2="238" y2="146" stroke="var(--ink)" stroke-width="13" stroke-linecap="round"/>
+          <line x1="87" y1="196" x2="104" y2="226" stroke="var(--ink)" stroke-width="13" stroke-linecap="round"/>
+          <rect x="96" y="150" width="108" height="100" rx="30" class="s-ink"/>
+          <path d="M128 150 L172 150 L150 206 Z" class="s-sheet"/>
+          <path d="M150 160 L134 151 L134 169 Z" class="s-pla"/>
+          <path d="M150 160 L166 151 L166 169 Z" class="s-pla"/>
+          <circle cx="150" cy="160" r="3.5" class="s-pla"/>
+          <circle cx="150" cy="182" r="2.5" class="s-ink"/>
+          <circle cx="150" cy="194" r="2.5" class="s-ink"/>
+          <circle cx="150" cy="114" r="34" class="s-pla"/>
+          <circle cx="150" cy="111" r="9" class="s-lens"/>
+          <circle cx="150" cy="111" r="3" class="s-ink"/>
+          <circle cx="167" cy="101" r="3" class="s-lens"/>
+          <path d="M138 130 Q150 138 162 130" class="s-pla-line"/>
+          <rect x="208" y="134" width="70" height="7" rx="3" class="s-pla"/>
+          <path d="M232 134 L236 112 L250 112 L254 134 Z" class="s-hw"/>
+          <text x="150" y="40" text-anchor="middle" class="s-textmuted">altura total ≈ 220 mm</text>
+        </svg>
+      </figure>
+      <div class="body">
+        <h3>C · Garçom Mascote</h3>
+        <div class="tags"><span class="tag hard">difícil</span><span class="tag">~18–28 h</span><span class="tag">~250–350 g</span></div>
+        <p>Um personagem de smoking com gravata-borboleta, cabeça redonda e um braço segurando a bandeja.</p>
+        <div class="pc">
+          <div><h4>Prós</h4><ul><li>O mais divertido em vídeo</li><li>Muita personalidade</li></ul></div>
+          <div><h4>Contras</h4><ul><li>Formas curvas dão mais trabalho no desenho</li><li>Bandeja para fora do chassi desequilibra</li><li>No limite de peso</li></ul></div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Conceito B por dentro · vista lateral explodida</span>
+  <h2>Como as peças se empilham</h2>
+  <p>Cada camada sai para cima. A eletrônica fica toda no chassi, como no manual; a carcaça só cobre e dá forma.</p>
+  <div class="drawing">
+    <div class="art">
+      <svg viewBox="0 0 330 420" role="img" aria-label="Vista lateral explodida: chassi com baterias embaixo, depois a saia impressa, a coluna oca, duas bandejas e a cabeça com a ESP32-CAM inclinada">
+        <line x1="165" y1="20" x2="165" y2="400" class="s-dash"/>
+        <!-- 5 cabeça -->
+        <path d="M222 88 L300 70 L300 126 Z" class="s-cone"/>
+        <rect x="128" y="40" width="82" height="64" rx="24" class="s-pla"/>
+        <line x1="150" y1="44" x2="160" y2="44" class="s-pla-line"/>
+        <line x1="166" y1="44" x2="176" y2="44" class="s-pla-line"/>
+        <rect x="186" y="52" width="8" height="42" rx="1" class="s-board" transform="rotate(15 190 73)"/>
+        <rect x="205" y="64" width="8" height="12" rx="2" class="s-screen" transform="rotate(15 190 73)"/>
+        <circle cx="113" cy="72" r="11" class="s-num"/><text x="113" y="76.5" text-anchor="middle" class="s-numtext">5</text>
+        <text x="300" y="62" text-anchor="end" class="s-textmuted">visão ~15° p/ baixo</text>
+        <!-- 4 bandeja de cima -->
+        <rect x="88" y="128" width="154" height="6" rx="3" class="s-pla"/>
+        <circle cx="70" cy="131" r="11" class="s-num"/><text x="70" y="135.5" text-anchor="middle" class="s-numtext">4</text>
+        <!-- 3 coluna + bandeja de baixo -->
+        <rect x="150" y="150" width="30" height="80" class="s-pla"/>
+        <line x1="160" y1="152" x2="160" y2="228" class="s-dash"/>
+        <line x1="170" y1="152" x2="170" y2="228" class="s-dash"/>
+        <rect x="62" y="186" width="206" height="7" rx="3" class="s-pla"/>
+        <rect x="62" y="179" width="5" height="10" rx="2" class="s-pla"/>
+        <rect x="263" y="179" width="5" height="10" rx="2" class="s-pla"/>
+        <circle cx="44" cy="190" r="11" class="s-num"/><text x="44" y="194.5" text-anchor="middle" class="s-numtext">3</text>
+        <!-- 2 saia -->
+        <path d="M55,300 L55,268 Q55,250 73,250 L257,250 Q275,250 275,268 L275,300 L263,300 A38 38 0 0 0 187 300 Z" class="s-pla"/>
+        <line x1="80" y1="268" x2="80" y2="290" class="s-pla-line"/>
+        <line x1="90" y1="268" x2="90" y2="290" class="s-pla-line"/>
+        <line x1="100" y1="268" x2="100" y2="290" class="s-pla-line"/>
+        <rect x="145" y="246" width="40" height="6" rx="2" class="s-pla"/>
+        <circle cx="37" cy="275" r="11" class="s-num"/><text x="37" y="279.5" text-anchor="middle" class="s-numtext">2</text>
+        <!-- 1 chassi -->
+        <rect x="68" y="334" width="80" height="22" rx="3" class="s-hw"/>
+        <rect x="160" y="342" width="38" height="14" rx="2" class="s-board"/>
+        <rect x="236" y="346" width="22" height="10" rx="2" class="s-board"/>
+        <rect x="60" y="356" width="210" height="5" class="s-hw"/>
+        <rect x="200" y="361" width="50" height="16" rx="2" class="s-hw"/>
+        <circle cx="225" cy="369" r="32.5" class="s-hw"/>
+        <circle cx="225" cy="369" r="8" class="s-inkline"/>
+        <rect x="88" y="361" width="8" height="18" class="s-hw"/>
+        <circle cx="92" cy="391" r="10" class="s-hw"/>
+        <line x1="20" y1="401.5" x2="310" y2="401.5" class="s-ground"/>
+        <circle cx="37" cy="356" r="11" class="s-num"/><text x="37" y="360.5" text-anchor="middle" class="s-numtext">1</text>
+        <text x="108" y="349" text-anchor="middle" class="s-textmuted">2×18650</text>
+        <text x="300" y="416" text-anchor="end" class="s-text">frente →</text>
+      </svg>
+    </div>
+    <ol>
+      <li><div><b>Chassi de acrílico (já comprado)</b><span>Baterias, regulador LM2596 e driver MX1508 presos no chassi, exatamente como no manual. Não muda nada.</span></div></li>
+      <li><div><b>Saia (base) impressa</b><span>Cobre a eletrônica. Tem recorte para as rodas, frestas de ventilação, furo para a chave e encaixe para a coluna. Presa ao chassi com parafusos M3 nos furos que o acrílico já tem.</span></div></li>
+      <li><div><b>Coluna oca + bandeja de baixo</b><span>A coluna tem um canal de ~15 mm por dentro para os 6 fios (5V, GND e 4 dos motores) subirem até a cabeça. A bandeja desliza pela coluna.</span></div></li>
+      <li><div><b>Bandeja de cima</b><span>Menor que a de baixo. Pode ter um rebaixo redondo para segurar um copinho de café.</span></div></li>
+      <li><div><b>Cabeça com a ESP32-CAM</b><span>A placa (27 × 40 mm) fica atrás do “rosto”, inclinada ~15° para baixo para ver o chão à frente. Janela para a lente, janela para o flash e frestas em cima. Presa com 2 ímãs, para tirar fácil.</span></div></li>
+    </ol>
+  </div>
+  <p class="note"><b>Câmera de cabeça para baixo?</b> Se, por causa do jeito que a placa ficou presa na cabeça, a imagem aparecer invertida, não precisa reimprimir nada: é só mudar <span class="mono">CAM_VFLIP</span> e <span class="mono">CAM_HMIRROR</span> para <span class="mono">true</span> no <span class="mono">config.h</span>.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Ordem de trabalho</span>
+  <h2>Como fazer, passo a passo</h2>
+  <ol class="steps">
+    <li data-n="1"><span class="who">você · agora</span><b>Pergunte duas coisas ao seu amigo</b>
+      <ul><li>Qual o tamanho da mesa de impressão? O comum é 220 × 220 mm. Peça maior que isso precisa ser dividida.</li><li>Qual filamento ele tem? Use <b>PLA</b>: é o mais fácil de imprimir e de pintar.</li></ul></li>
+    <li data-n="2"><span class="who">você · agora</span><b>Treine no Tinkercad enquanto as peças não chegam</b>
+      <ul>
+        <li>Abra <a href="https://www.tinkercad.com" target="_blank" rel="noopener">tinkercad.com</a>, crie uma conta grátis e clique em <b>Criar → Design 3D</b>. Funciona no navegador, não precisa instalar nada.</li>
+        <li>Arraste uma <b>Caixa</b> para a área de trabalho e digite as medidas nos números que aparecem nas bordas (ex.: 160 × 210 × 50).</li>
+        <li>Para deixar oca: duplique a caixa (Ctrl+D), diminua 2 mm de cada lado, clique em <b>Furo</b> e depois selecione as duas e clique em <b>Agrupar</b>.</li>
+        <li>Janelas da câmera e do flash: cilindros marcados como <b>Furo</b>, do mesmo jeito.</li>
+      </ul></li>
+    <li data-n="3"><span class="who">você + seu pai · quando as peças chegarem</span><b>Monte o robô primeiro e meça tudo depois</b>
+      <ul><li>Siga o manual até o robô andar. A carcaça só é desenhada <b>depois</b>, com as peças reais na mão.</li><li>Meça com paquímetro (ou régua) os itens da tabela abaixo. Anúncio de chassi costuma errar alguns milímetros.</li></ul></li>
+    <li data-n="4"><span class="who">você · Tinkercad</span><b>Desenhe a cabeça primeiro</b>
+      <ul><li>É a peça menor e a mais importante. Imprima só ela e teste: a lente aparece bem na janela? A imagem do dashboard ficou boa?</li><li>Errar numa peça de 1 h é barato. Errar na base inteira custa 6 h de impressão.</li></ul></li>
+    <li data-n="5"><span class="who">você · Tinkercad</span><b>Depois a saia, a coluna e as bandejas</b>
+      <ul><li>Deixe ~2 mm de folga em todo encaixe. Impressora 3D não é precisa ao décimo.</li><li>Para exportar: botão <b>Exportar → .STL</b>, uma peça por arquivo. Mande os arquivos para o seu amigo.</li></ul></li>
+    <li data-n="6"><span class="who">você · acabamento</span><b>Lixe, pinte e personalize</b>
+      <ul><li>Lixa d’água 220 e depois 400, primer spray e tinta acrílica. Nunca use tinta metálica na cabeça (regra 3).</li><li>Detalhes que ficam bem no vídeo: gravata-borboleta, nome do robô na base, “olhos” desenhados ao redor da lente.</li></ul></li>
+  </ol>
+</section>
+
+<section class="two">
+  <div>
+    <span class="eyebrow">Para o seu amigo</span>
+    <h3>Configuração de impressão sugerida</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>Ajuste</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td>Material</td><td class="v">PLA</td></tr>
+        <tr><td>Altura de camada</td><td class="v">0,2 mm</td></tr>
+        <tr><td>Paredes (perímetros)</td><td class="v">3 (≈1,2 mm)</td></tr>
+        <tr><td>Preenchimento</td><td class="v">10–15 %</td></tr>
+        <tr><td>Suportes</td><td class="v">só na cabeça</td></tr>
+        <tr><td>Bandejas</td><td class="v">deitadas na mesa</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div>
+    <span class="eyebrow">Quando as peças chegarem</span>
+    <h3>Medidas para tirar antes de desenhar</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>O quê</th><th>Esperado</th></tr></thead>
+      <tbody>
+        <tr><td>Chassi (largura × comprimento)</td><td class="v">≈ 150 × 210</td></tr>
+        <tr><td>Diâmetro da roda</td><td class="v">≈ 65</td></tr>
+        <tr><td>Altura do suporte 2×18650</td><td class="v">≈ 20</td></tr>
+        <tr><td>ESP32-CAM (placa)</td><td class="v">27 × 40,5</td></tr>
+        <tr><td>Distância entre furos do chassi</td><td class="v">medir</td></tr>
+        <tr><td>Posição da chave liga/desliga</td><td class="v">medir</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Atalhos</span>
+  <h3>Para não começar do zero</h3>
+  <p>Em <a href="https://www.printables.com" target="_blank" rel="noopener">printables.com</a> e <a href="https://www.thingiverse.com" target="_blank" rel="noopener">thingiverse.com</a> há modelos prontos e gratuitos. Busque por <span class="mono">ESP32-CAM case</span> (serve de ponto de partida para a cabeça), <span class="mono">2WD robot car body</span> e <span class="mono">restaurant robot</span>. Dá para baixar um modelo, importar no Tinkercad e adaptar as medidas.</p>
+  <p>Para fixar: um kit de <b>espaçadores e parafusos M3 de nylon</b> (prende a saia no chassi) e <b>ímãs de neodímio 10 × 3 mm</b> colados com epóxi (prendem a cabeça e as bandejas, que saem com a mão). Os dois são baratos na Shopee.</p>
+</section>
+
+<footer>Projeto Robô Garçom IoT · desenhos ilustrativos em escala aproximada, com base nas medidas dos anúncios. Confirme tudo com as peças reais antes de imprimir.</footer>
+
+</div>
+</body></html>

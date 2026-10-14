@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bandejito · Pedidos</title>
+<!-- Fase 5 (autonomia): por enquanto SÓ no simulador. Tudo inline (sem CDN),
+     como o painel do robô, porque a rede do robô não tem internet. -->
+<style>
+  :root{--bg:#0f1218;--card:#181d26;--line:#2a3140;--txt:#e8ecf3;--mut:#8b95a7;--acc:#3ea6ff;--ok:#3ecf8e;--warn:#f5c542;--bad:#ff5d5d}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  h1{font-size:17px;margin:0;font-weight:600}
+  h2{font-size:15px;margin:0 0 10px;font-weight:600}
+  a{color:var(--acc);text-decoration:none;font-size:14px}
+  main{max-width:1060px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:1fr}
+  @media(min-width:860px){main{grid-template-columns:3fr 2fr}}
+  .col{display:grid;gap:16px;align-content:start}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .video{position:relative;aspect-ratio:4/3;background:#000;border-radius:10px;overflow:hidden}
+  .video img{width:100%;height:100%;object-fit:contain;display:block}
+  .video .msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mut)}
+  .estado{font-size:17px;font-weight:600;margin:12px 0 4px}
+  .sub{font-size:13px;color:var(--mut)}
+  .sens{display:flex;gap:6px;align-items:center;margin-top:10px;font-size:13px;color:var(--mut)}
+  .sens i{width:16px;height:16px;border-radius:50%;background:#2c5d78;display:inline-block}
+  .sens i.on{background:var(--bad)}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{flex:1;padding:10px;border:0;background:#212836;color:var(--txt);font-size:14px;cursor:pointer}
+  .seg button.on{background:var(--acc);color:#fff}
+  .row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  button.b{flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#212836;color:var(--txt);font-size:14px;cursor:pointer}
+  button.b:disabled{opacity:.4;cursor:not-allowed}
+  button.big{background:var(--ok);border-color:var(--ok);color:#06210f;font-weight:700}
+  button.on{background:var(--warn);color:#111;border-color:var(--warn)}
+  .mesas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .mesas button{padding:12px;border-radius:10px;border:1px solid var(--line);background:#212836;color:var(--txt);font-size:15px;cursor:pointer}
+  .mesas button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  .itens{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+  .item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#1d2330}
+  .item button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#2a3242;color:var(--txt);font-size:16px;cursor:pointer}
+  .item b{min-width:18px;text-align:center;display:inline-block}
+  .lista{display:grid;gap:8px}
+  .ped{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#1d2330}
+  .ped .info{flex:1;min-width:0}
+  .ped .info div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tag{font-size:12px;padding:2px 8px;border-radius:999px;background:#2a3242;color:var(--mut);white-space:nowrap}
+  .tag.novo{background:#3a3220;color:var(--warn)} .tag.pronto{background:#1f3350;color:var(--acc)}
+  .tag.a_caminho,.tag.na_mesa{background:#1d3a2c;color:var(--ok)}
+  .ped button{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#2a3242;color:var(--txt);font-size:13px;cursor:pointer}
+  .vazio{color:var(--mut);font-size:13px;text-align:center;padding:10px}
+  .aviso{min-height:18px;font-size:13px;color:var(--warn);margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🤖 Bandejito · Pedidos <span class="sub">(simulador · Fase 5)</span></h1>
+  <a href="/">🕹️ Controle manual</a>
+</header>
+<main>
+  <div class="col">
+    <section class="card">
+      <div class="video">
+        <img id="cam" alt="Vídeo ao vivo">
+        <div id="camMsg" class="msg">Carregando vídeo…</div>
+      </div>
+      <div class="estado" id="estado">–</div>
+      <div class="sub" id="detalhe">–</div>
+      <div class="sens">Sensores de linha: <span id="sens"></span> <span id="dist" style="margin-left:auto"></span></div>
+    </section>
+
+    <section class="card">
+      <h2>🤖 Robô</h2>
+      <div class="seg">
+        <button id="mManual">🕹️ Manual</button>
+        <button id="mAuto">🚚 Automático</button>
+      </div>
+      <div class="row">
+        <button class="b big" id="entregue" disabled>✅ Entregue</button>
+      </div>
+      <div class="row">
+        <button class="b" id="base">📍 Colocar na base</button>
+        <button class="b" id="obst">🚧 Obstáculo na pista</button>
+      </div>
+      <div class="aviso" id="aviso"></div>
+      <p class="sub">"Colocar na base" e "Obstáculo" são ajudas do simulador. No robô real, você põe o robô na base com a mão, e o obstáculo é qualquer coisa (ou pessoa) na frente dele.</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>🍽️ Mesa: fazer pedido</h2>
+      <div class="mesas" id="mesas"></div>
+      <div class="itens" id="itens"></div>
+      <div class="row"><button class="b big" id="pedir" disabled>Enviar pedido</button></div>
+    </section>
+
+    <section class="card">
+      <h2>👩‍🍳 Cozinha</h2>
+      <div class="lista" id="cozinha"></div>
+    </section>
+
+    <section class="card">
+      <h2>📜 Entregues</h2>
+      <div class="lista" id="historico"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const ITENS = [['☕', 'Café'], ['🥤', 'Refri'], ['🍰', 'Bolo'], ['🍕', 'Pizza']];
+  const ESTADOS = {
+    manual: ['🕹️ Controle manual', 'Use a página de controle manual, ou mude para Automático.'],
+    na_base: ['🏠 Na base', 'Esperando a cozinha marcar um pedido como pronto.'],
+    indo: ['🚚 Indo para a {alvo}', 'Seguindo a linha e contando as marcas.'],
+    na_mesa: ['🍽️ Na {pos}', 'Retire o pedido da bandeja e toque em "Entregue".'],
+    voltando: ['↩️ Voltando para a base', 'Seguindo a linha até a marca da base.'],
+    obstaculo: ['🚧 Obstáculo à frente', 'Parado esperando o caminho ficar livre.'],
+    perdido: ['❓ Perdeu a linha', 'Toque em "Colocar na base" e depois em Automático.'],
+  };
+  const TAG = { novo: 'aguardando cozinha', pronto: 'pronto · na fila do robô', a_caminho: 'robô a caminho',
+                na_mesa: 'robô na mesa', entregue: 'entregue', cancelado: 'cancelado' };
+  let mesaSel = 0, qtd = ITENS.map(() => 0), st = null, obstOn = false, ultimaLista = '';
+
+  // ---------- Vídeo (porta do painel + 1) ----------
+  const cam = $('cam'), camMsg = $('camMsg');
+  const streamPort = location.port ? Number(location.port) + 1 : 81;
+  function startVideo() { camMsg.style.display = 'flex'; cam.src = `http://${location.hostname}:${streamPort}/stream?t=${Date.now()}`; }
+  cam.onload = () => { camMsg.style.display = 'none'; };
+  cam.onerror = () => { camMsg.style.display = 'flex'; camMsg.textContent = 'Vídeo indisponível, tentando de novo…'; setTimeout(startVideo, 2000); };
+  startVideo();
+
+  async function call(url) {
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      const t = await r.text();
+      $('aviso').textContent = r.ok ? '' : t;
+      poll();
+      return r.ok ? t : null;
+    } catch (e) { $('aviso').textContent = 'Sem conexão com o robô'; return null; }
+  }
+
+  // ---------- Mesa ----------
+  function desenharPedido(nMesas) {
+    $('mesas').innerHTML = '';
+    for (let m = 1; m <= nMesas; m++) {
+      const b = document.createElement('button');
+      b.textContent = `Mesa ${m}`; b.classList.toggle('on', m === mesaSel);
+      b.onclick = () => { mesaSel = m; desenharPedido(nMesas); };
+      $('mesas').appendChild(b);
+    }
+    $('itens').innerHTML = '';
+    ITENS.forEach(([emo, nome], i) => {
+      const d = document.createElement('div'); d.className = 'item';
+      d.innerHTML = `<span>${emo} ${nome}</span><span><button>−</button> <b>${qtd[i]}</b> <button>+</button></span>`;
+      const [menos, mais] = d.querySelectorAll('button');
+      menos.onclick = () => { qtd[i] = Math.max(0, qtd[i] - 1); desenharPedido(nMesas); };
+      mais.onclick = () => { qtd[i] = Math.min(9, qtd[i] + 1); desenharPedido(nMesas); };
+      $('itens').appendChild(d);
+    });
+    $('pedir').disabled = !(mesaSel && qtd.some(Boolean));
+  }
+  $('pedir').onclick = async () => {
+    const itens = ITENS.map(([emo], i) => qtd[i] ? `${emo}x${qtd[i]}` : '').filter(Boolean).join(' ');
+    if (await call(`/pedido/novo?mesa=${mesaSel}&itens=${encodeURIComponent(itens)}`)) {
+      qtd = ITENS.map(() => 0); desenharPedido(st ? st.mesas : 3);
+    }
+  };
+
+  // ---------- Robô ----------
+  $('mManual').onclick = () => call('/auto/modo?m=manual');
+  $('mAuto').onclick = () => call('/auto/modo?m=auto');
+  $('entregue').onclick = () => call('/pedido/entregue');
+  $('base').onclick = () => call('/sim/base');
+  $('obst').onclick = () => call(`/sim/obstaculo?on=${obstOn ? 0 : 1}`);
+
+  function linhaPedido(p, comBotoes) {
+    const d = document.createElement('div'); d.className = 'ped';
+    const info = document.createElement('div'); info.className = 'info';
+    const t1 = document.createElement('div'); t1.textContent = `#${p.id} · Mesa ${p.mesa}`;
+    const t2 = document.createElement('div'); t2.className = 'sub'; t2.textContent = p.itens;
+    info.append(t1, t2);
+    const tag = document.createElement('span'); tag.className = `tag ${p.estado}`; tag.textContent = TAG[p.estado] || p.estado;
+    d.append(info, tag);
+    if (comBotoes && p.estado === 'novo') {
+      const ok = document.createElement('button'); ok.textContent = '✔ Pronto';
+      ok.onclick = () => call(`/pedido/pronto?id=${p.id}`);
+      d.append(ok);
+    }
+    if (comBotoes && ['novo', 'pronto'].includes(p.estado)) {
+      const x = document.createElement('button'); x.textContent = '✕';
+      x.title = 'Cancelar'; x.onclick = () => call(`/pedido/cancelar?id=${p.id}`);
+      d.append(x);
+    }
+    return d;
+  }
+
+  function lista(el, itens, comBotoes, vazio) {
+    el.innerHTML = '';
+    if (!itens.length) { el.innerHTML = `<div class="vazio">${vazio}</div>`; return; }
+    itens.forEach(p => el.appendChild(linhaPedido(p, comBotoes)));
+  }
+
+  async function poll() {
+    try {
+      st = await (await fetch('/auto/status', { cache: 'no-store' })).json();
+    } catch (e) { $('estado').textContent = '⚠️ Sem conexão com o robô'; return; }
+    const [t, d] = ESTADOS[st.estado] || [st.estado, ''];
+    $('estado').textContent = t.replace('{alvo}', st.alvo).replace('{pos}', st.posicao);
+    $('detalhe').textContent = d;
+    $('mManual').classList.toggle('on', st.modo === 'manual');
+    $('mAuto').classList.toggle('on', st.modo === 'auto');
+    $('entregue').disabled = st.estado !== 'na_mesa';
+    obstOn = st.obstaculo; $('obst').classList.toggle('on', obstOn);
+    $('sens').innerHTML = st.sensores.map(v => `<i class="${v ? 'on' : ''}"></i>`).join('');
+    $('dist').textContent = st.distancia_cm === null ? 'distância: livre' : `distância: ${st.distancia_cm} cm`;
+    if (!$('mesas').children.length) desenharPedido(st.mesas);
+    const ativos = st.pedidos.filter(p => ['novo', 'pronto', 'a_caminho', 'na_mesa'].includes(p.estado));
+    const feitos = st.pedidos.filter(p => ['entregue', 'cancelado'].includes(p.estado)).reverse().slice(0, 6);
+    // Só redesenha as listas se algo mudou (senão um clique pode "sumir" no meio)
+    const chave = JSON.stringify([ativos, feitos]);
+    if (chave !== ultimaLista) {
+      ultimaLista = chave;
+      lista($('cozinha'), ativos, true, 'Nenhum pedido em aberto');
+      lista($('historico'), feitos, false, 'Nada entregue ainda');
+    }
+  }
+  setInterval(poll, 500); poll();
+})();
+</script>
+</body>
+</html>

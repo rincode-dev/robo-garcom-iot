@@ -1,0 +1,93 @@
+# =====================================================================
+# MEDIDAS DA CARCAÇA (conceito B · Torre de Serviço). Unidades: mm.
+#
+# Este é o "painel de números" da carcaça:
+#   1. Mude o número depois do "=". Pode usar vírgula ou ponto (40,5 ou 40.5).
+#   2. Salve o arquivo (Ctrl+S).
+#   3. Dê dois cliques em GERAR.bat.
+#   4. Os arquivos novos aparecem em step\ (Fusion 360) e stl\ (impressora).
+#
+# Tudo depois de "#" é comentário e não conta.
+# (MEDIR) = medida estimada; confira na peça real antes de imprimir.
+# =====================================================================
+
+# --- Chassi de acrílico -----------------------------------------------
+chassi_largura     = 150    # de lado a lado (do anúncio)
+chassi_comprimento = 210    # da frente para trás (do anúncio)
+furos_dist_x       = 120    # furos esquerda↔direita, centro a centro (MEDIR)
+furos_dist_y       = 170    # furos frente↔trás, centro a centro (MEDIR)
+furos_desloc_y     = 0      # furos deslocados p/ frente (+) ou trás (-) (MEDIR)
+furo_parafuso      = 2.8    # furo para o M3 rosquear direto no plástico
+
+# --- Rodas -------------------------------------------------------------
+roda_diametro      = 65
+roda_largura       = 27
+roda_pos_y         = -55    # eixo das rodas: + = frente, - = trás (MEDIR)
+roda_eixo_z        = -12    # altura do eixo vs. topo do acrílico; negativo = abaixo (MEDIR)
+roda_folga         = 5      # espaço livre em volta da roda
+
+# --- Saia (base) -------------------------------------------------------
+saia_altura        = 55
+saia_raio_canto    = 18
+parede             = 2      # espessura das paredes
+saia_teto          = 2.5
+abertura_traseira  = true   # abertura atrás para tirar as baterias
+abertura_traseira_largura = 90
+abertura_traseira_altura  = 45
+furo_chave         = true   # furo no teto em cima da chave liga/desliga
+chave_pos_x        = 40     # + = direita (MEDIR)
+chave_pos_y        = -70    # + = frente (MEDIR)
+chave_largura      = 14
+chave_comprimento  = 22
+nome               = "Bandejito 1.0"   # nome gravado na frente ("" = sem nome)
+nome_tamanho       = 11
+coluna_pos_y       = 0      # posição da coluna: + = frente, - = trás
+
+# --- Coluna ------------------------------------------------------------
+coluna_d1          = 36     # trecho de baixo (entra na saia, segura a bandeja de baixo)
+coluna_h1          = 42
+coluna_d2          = 32     # trecho do meio (segura a bandeja de cima)
+coluna_h2          = 45
+coluna_d3          = 28     # trecho de cima (entra na cabeça)
+coluna_h3          = 38
+canal_fios         = 18     # canal oco para os 6 fios
+encaixe_prof       = 12     # profundidade dos encaixes
+encaixe_corte      = 2      # lado reto do encaixe (não deixa girar)
+
+# --- Bandejas ----------------------------------------------------------
+bandeja_formato    = "retangular"   # "retangular" (cantos arredondados) ou "redonda"
+# Retangulares: mesma proporção da base (1 : 1,4) e sem passar da borda dela
+bandeja_baixo_largura     = 136   # de lado a lado
+bandeja_baixo_comprimento = 190   # da frente para trás
+bandeja_cima_largura      = 104   # menor que a de baixo: sobra uma faixa livre em volta
+bandeja_cima_comprimento  = 146
+bandeja_raio_canto = 16
+# Redondas (só valem com bandeja_formato = "redonda")
+bandeja_baixo_d    = 130
+bandeja_cima_d     = 100
+bandeja_esp        = 3
+bandeja_borda      = 6      # altura da borda
+bandeja_colar      = 8      # altura do colar em volta do furo
+
+# --- Cabeça e ESP32-CAM ------------------------------------------------
+cab_largura        = 52
+cab_profundidade   = 48
+cab_altura         = 68
+inclinacao         = 15     # quanto a câmera olha para baixo (graus)
+placa_largura      = 27     # ESP32-CAM (do anúncio)
+placa_altura       = 40.5   # ESP32-CAM (do anúncio)
+placa_esp          = 1.6
+lente_altura       = 6      # da frente da placa até a frente da lente (MEDIR)
+lente_x            = 0      # lente: lado (0 = centro) (MEDIR)
+lente_do_topo      = 12     # lente: distância da borda de cima da placa (MEDIR)
+lente_janela       = 10
+campo_visao        = 80     # ângulo de visão da câmera; a janela abre em cone
+olho_z             = 46     # altura do "olho" (lente) na cara
+flash_x            = -10    # LED de flash: lado (MEDIR)
+flash_do_topo      = 33     # LED de flash: distância da borda de cima da placa (MEDIR)
+flash_janela_largura = 7
+flash_janela_altura  = 11
+boca               = true   # sorriso gravado na cara
+
+# --- Impressão ---------------------------------------------------------
+folga              = 0.3    # folga dos encaixes (aumente se ficar apertado)
