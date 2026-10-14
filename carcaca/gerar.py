@@ -114,23 +114,59 @@ def quadro_placa(obj):
 
 
 # ---------------------------------------------------------------------
+# Contorno do chassi (visto de cima): corpo estreito com a frente curva
+# e traseira larga em leque. Origem no meio do chassi, +y = frente.
+# ---------------------------------------------------------------------
+def contorno():
+    w, xt = W / 2, chassi_largura_traseira / 2
+    yf = L / 2 - frente_curva            # cantos da frente
+    yb = -L / 2 + traseira_inicio        # onde o leque começa
+    ytt = yb - 6                         # topo das pontas do leque
+    yt = -L / 2 + traseira_ponta         # pontas do leque
+    return (cq.Workplane("XY").moveTo(-w, yf).threePointArc((0, L / 2), (w, yf))
+            .lineTo(w, yb).lineTo(xt, ytt).lineTo(xt, yt)
+            .threePointArc((0, -L / 2), (-xt, yt))
+            .lineTo(-xt, ytt).lineTo(-w, yb).close())
+
+
+def prisma(h, recuo=0.0, z=0.0, raio=None):
+    """Contorno do chassi extrudado; recuo > 0 encolhe (para dentro)."""
+    wp = contorno()
+    if recuo:
+        wp = wp.offset2D(-recuo, kind="arc")
+    p = wp.extrude(h)
+    r = saia_raio_canto if raio is None else raio
+    if r > 0.5:
+        try:
+            p = p.edges("|Z").fillet(r)
+        except Exception:
+            pass   # algum canto apertado demais para arredondar: fica vivo
+    return p.translate((0, 0, z))
+
+
+# ---------------------------------------------------------------------
 # Saia
 # ---------------------------------------------------------------------
 def furo(sx, sy):
-    return (sx * furos_dist_x / 2, furos_desloc_y + sy * furos_dist_y / 2)
+    """sy = +1: par da frente; sy = -1: par de trás."""
+    if sy > 0:
+        return (sx * furo_frente_x, furo_frente_y)
+    return (sx * furo_tras_x, furo_tras_y)
 
 
 def saia():
-    corpo = rrect(W, L, H, saia_raio_canto).cut(
-        rrect(W - 2 * parede, L - 2 * parede, H - saia_teto + 1, saia_raio_canto - parede).translate((0, 0, -1)))
+    R0, rin = saia_recuo, saia_raio_canto - parede   # a saia fica R0 para dentro da borda da base
+    corpo = prisma(H, R0).cut(prisma(H - saia_teto + 1, R0 + parede, -1, rin))
+    vao = prisma(H - saia_teto, R0 + parede, raio=rin)   # espaço de dentro
 
-    # Abas de fixacao com rampa de 45 graus (imprime sem suporte)
+    # Abas de fixacao com rampa de 45 graus (imprime sem suporte): de cada
+    # furo, uma rampa sobe em diagonal para fora até encostar na parede.
     abas = None
     for sx in (-1, 1):
         for sy in (-1, 1):
             hx, hy = furo(sx, sy)
-            cx, cy = sx * W / 2, sy * L / 2
-            dist = math.hypot(cx - hx, cy - hy)
+            dist = 30
+            cx, cy = hx + sx * dist / math.sqrt(2), hy + sy * dist / math.sqrt(2)
             ang = math.degrees(math.atan2(cy - hy, cx - hx))
             base = (cq.Workplane("XY").center((hx + cx) / 2, (hy + cy) / 2)
                     .slot2D(dist + 12, 12, ang).extrude(aba_h))
@@ -140,7 +176,7 @@ def saia():
             ]))
             aba = base.union(rampa)
             abas = aba if abas is None else abas.union(aba)
-    corpo = corpo.union(abas.intersect(rrect(W, L, H - saia_teto, saia_raio_canto)))
+    corpo = corpo.union(abas.intersect(vao))
 
     # Encaixe da coluna (por dentro do teto)
     corpo = corpo.union(cilindro(coluna_d1 + 2 * folga + 8, encaixe_prof + 3,
@@ -153,14 +189,17 @@ def saia():
             cortes.append(cilindro(furo_parafuso, aba_h + 1, (hx, hy, -1)))
     cortes.append(dforma(coluna_d1, encaixe_prof + 1, folga).translate((0, coluna_pos_y, H - encaixe_prof)))
     cortes.append(cilindro(canal_fios, 10, (0, coluna_pos_y, H - encaixe_prof - 5)))
-    # Rodas
-    larg = roda_largura + 2 * roda_folga + 1
+    # Rodas (ficam do lado de fora do corpo; só cortam a saia se encostarem nela)
+    larg = roda_largura + 2 * roda_folga
+    if roda_pos_x - larg / 2 < W / 2 - R0:
+        print(f"[AVISO] a roda (com a folga) encosta na parede da saia: vai abrir um recorte na lateral. "
+              f"Aumente saia_recuo ou confira roda_pos_x")
     for sx in (-1, 1):
-        cx = sx * (W / 2 - (roda_largura + 2 * roda_folga) / 2 + 0.5)
-        cortes.append(cilindro(roda_diametro + 2 * roda_folga, larg, (cx - larg / 2, roda_pos_y, roda_eixo_z), (1, 0, 0)))
-    if abertura_traseira:
+        cortes.append(cilindro(roda_diametro + 2 * roda_folga, larg,
+                               (sx * roda_pos_x - larg / 2, roda_pos_y, roda_eixo_z), (1, 0, 0)))
+    if abertura_traseira:   # atravessa a parede curva de trás
         cortes.append(caixa(-abertura_traseira_largura / 2, abertura_traseira_largura / 2,
-                            -L / 2 - 1, -L / 2 + parede + 1, -1, abertura_traseira_altura))
+                            -L / 2 - 1, -L / 2 + traseira_ponta + parede + 2, -1, abertura_traseira_altura))
     if furo_chave:
         cortes.append(rrect(chave_largura, chave_comprimento, saia_teto + 2, 2)
                       .translate((chave_pos_x, chave_pos_y, H - saia_teto - 1)))
@@ -168,14 +207,20 @@ def saia():
     for sx in (-1, 1):
         for i in range(5):
             y = 25 + i * 13
-            cortes.append(caixa(sx * W / 2 - 2 * parede, sx * W / 2 + 2 * parede, y - 2, y + 2, H - 21, H - 7))
-    # Nome na frente
+            xp = sx * (W / 2 - R0)
+            cortes.append(caixa(xp - 2 * parede, xp + 2 * parede, y - 2, y + 2, H - 21, H - 7))
+    # Nome na frente: a frente é curva, então o texto atravessa a frente toda e
+    # só a "casca" de 0,8 mm da parede é cortada (gravação com profundidade igual)
     if nome:
         txt = (cq.Workplane("XY")
-               .text(nome, nome_tamanho, 1.5, font="Arial", kind="bold", halign="center", valign="center")
+               .text(nome, nome_tamanho, frente_curva + 12, font="Arial", kind="bold",
+                     halign="center", valign="center")
                .rotate((0, 0, 0), (1, 0, 0), 90).rotate((0, 0, 0), (0, 0, 1), 180)
-               .translate((0, L / 2 - 0.8, H * 0.45)))
-        cortes.append(txt)
+               .translate((0, L / 2 + 1 - (frente_curva + 12), H * 0.45)))   # o texto cresce para +y
+        bb = txt.val().BoundingBox()
+        if bb.xlen > W - 2 * saia_raio_canto - 6:
+            print(f"[AVISO] o nome tem {bb.xlen:.0f} mm e a frente {W:.0f} mm: diminua nome_tamanho")
+        cortes.append(txt.intersect(prisma(H, R0).cut(prisma(H + 2, R0 + 0.8, -1))))
 
     for c in cortes:
         corpo = corpo.cut(c)

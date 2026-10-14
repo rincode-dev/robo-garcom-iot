@@ -11,36 +11,59 @@
 # (MEDIR) = medida estimada; confira na peça real antes de imprimir.
 # =====================================================================
 
-# --- Chassi de acrílico -----------------------------------------------
-chassi_largura     = 150    # de lado a lado (do anúncio)
-chassi_comprimento = 210    # da frente para trás (do anúncio)
-furos_dist_x       = 120    # furos esquerda↔direita, centro a centro (MEDIR)
-furos_dist_y       = 170    # furos frente↔trás, centro a centro (MEDIR)
-furos_desloc_y     = 0      # furos deslocados p/ frente (+) ou trás (-) (MEDIR)
+# --- Chassi (base do kit 2WD: acrílico com papel protetor marrom) ------
+# Formato da foto do dono: corpo ESTREITO com a frente curva e traseira
+# LARGA em leque. As rodas ficam do lado de FORA do corpo estreito.
+# Visto de cima (frente = roda boba = câmera, em cima):
+#
+#              ╭────────╮   <- frente curva (frente_curva)
+#              │        │
+#              │ corpo  │   chassi_largura (10 cm)
+#            ( │        │ ) <- rodas, do lado de fora
+#              │        │
+#          ╱───┘        └───╲   <- começo do leque (traseira_inicio)
+#          ╲________________╱   <- traseira curva, chassi_largura_traseira (15 cm)
+#
+# Medidas da foto (cota do anúncio); o resto foi estimado pela foto (MEDIR).
+chassi_largura          = 100    # corpo estreito, de lado a lado (da foto: 10 cm)
+chassi_largura_traseira = 150    # leque de trás, de ponta a ponta (da foto: 15 cm)
+chassi_comprimento      = 212    # da frente até o meio da traseira (da foto: 21,2 cm)
+frente_curva            = 6      # quanto o meio da frente passa dos cantos (MEDIR)
+traseira_inicio         = 33     # onde o leque começa, medido da borda de trás (MEDIR)
+traseira_ponta          = 14     # das pontas do leque até a borda de trás (MEDIR)
+# Furos onde a saia é parafusada (a base tem muitos furos; se nenhum coincidir,
+# dá para furar com broca de 3 mm, devagar: acrílico racha). Pares esquerda/direita.
+furo_frente_x      = 38     # par da frente: distância do centro até cada furo (MEDIR)
+furo_frente_y      = 88     # par da frente: + = para a frente do centro (MEDIR)
+furo_tras_x        = 56     # par de trás, já dentro do leque (MEDIR)
+furo_tras_y        = -88    # par de trás: - = para trás do centro (MEDIR)
 furo_parafuso      = 2.8    # furo para o M3 rosquear direto no plástico
 
 # --- Rodas -------------------------------------------------------------
 roda_diametro      = 65
 roda_largura       = 27
-roda_pos_y         = -55    # eixo das rodas: + = frente, - = trás (MEDIR)
-roda_eixo_z        = -12    # altura do eixo vs. topo do acrílico; negativo = abaixo (MEDIR)
-roda_folga         = 5      # espaço livre em volta da roda
+roda_pos_x         = 65     # centro da roda até o meio do robô, de lado (MEDIR; 2ª foto: roda quase encostada no corpo)
+roda_pos_y         = -29    # eixo das rodas: + = frente, - = trás (MEDIR; as fotos dão 12,3 a 13,5 cm da frente)
+roda_eixo_z        = -12    # altura do eixo vs. topo da base; negativo = abaixo (MEDIR)
+roda_folga         = 3      # espaço livre em volta da roda
 
 # --- Saia (base) -------------------------------------------------------
+# A saia segue o contorno do chassi e cobre só o corpo; as rodas ficam de fora.
 saia_altura        = 55
-saia_raio_canto    = 18
+saia_recuo         = 2      # a saia fica esse tanto para dentro da borda da base (o pneu não raspa)
+saia_raio_canto    = 4      # arredondado dos cantos do contorno
 parede             = 2      # espessura das paredes
 saia_teto          = 2.5
 abertura_traseira  = true   # abertura atrás para tirar as baterias
-abertura_traseira_largura = 90
+abertura_traseira_largura = 70
 abertura_traseira_altura  = 45
 furo_chave         = true   # furo no teto em cima da chave liga/desliga
-chave_pos_x        = 40     # + = direita (MEDIR)
-chave_pos_y        = -70    # + = frente (MEDIR)
+chave_pos_x        = 23     # + = direita (MEDIR; o suporte fica deitado no meio, de frente para trás)
+chave_pos_y        = -60    # + = frente (MEDIR)
 chave_largura      = 14
 chave_comprimento  = 22
 nome               = "Bandejito 1.0"   # nome gravado na frente ("" = sem nome)
-nome_tamanho       = 11
+nome_tamanho       = 10     # a frente agora tem 10 cm: o nome precisa caber nela
 coluna_pos_y       = 0      # posição da coluna: + = frente, - = trás
 
 # --- Coluna ------------------------------------------------------------
@@ -56,7 +79,8 @@ encaixe_corte      = 2      # lado reto do encaixe (não deixa girar)
 
 # --- Bandejas ----------------------------------------------------------
 bandeja_formato    = "retangular"   # "retangular" (cantos arredondados) ou "redonda"
-# Retangulares: mesma proporção da base (1 : 1,4) e sem passar da borda dela
+# Retangulares: proporção 1 : 1,4. Ficam mais largas que o corpo (10 cm),
+# como a bandeja de um garçom; a de baixo não passa das rodas (~16 cm).
 bandeja_baixo_largura     = 136   # de lado a lado
 bandeja_baixo_comprimento = 190   # da frente para trás
 bandeja_cima_largura      = 104   # menor que a de baixo: sobra uma faixa livre em volta

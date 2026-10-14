@@ -90,12 +90,16 @@ def rota(a, b, z):
 
 
 # ---------------------------------------------------------------------
-# Posicoes da eletronica (as mesmas da "eletronica" do .scad)
+# Posicoes da eletronica (as mesmas da "eletronica" do .scad). O corpo do
+# chassi tem so 10 cm de largura: suporte das pilhas deitado no meio, de
+# frente para tras (as pilhas saem pela abertura de tras); regulador e
+# protoboard lado a lado na frente; driver ao lado do suporte, perto dos motores.
 # ---------------------------------------------------------------------
-BAT = (0, -60)          # suporte 2x18650: 41 x 78 x 25
-LM = (-45, 35)          # LM2596: 35 x 66
-PB = (45, 35)           # mini protoboard: 34 x 45 x 8,5
-DRV = (45, -5)          # MX1508: 21 x 24
+BAT = (0, -50)          # suporte 2x18650: 41 x 78 x 25
+LM = (-27, 48)          # LM2596: 35 x 66
+PB = (27, 52)           # mini protoboard: 34 x 45 x 8,5
+DRV = (32, -38)         # MX1508: 21 x 24
+FURO_FIOS_X = 8         # furos na base por onde os fios dos motores sobem (x = +-8)
 PB_TOPO = 8.5
 COL_Z0 = g.coluna_z0    # base da coluna (dentro da saia)
 
@@ -136,18 +140,14 @@ def pino_esp(k, lado=1):
 # Pecas
 # ---------------------------------------------------------------------
 def chassi():
-    placa = cq.Workplane("XY").add(g.rrect(W, L, 3, 8).val().translate(V(0, 0, -3)))
+    """Base do kit (acrilico; marrom = papel protetor), contorno da foto, furos simplificados."""
+    placa = g.prisma(3, z=-3)
     for sx in (-1, 1):
         for sy in (-1, 1):
             hx, hy = g.furo(sx, sy)
             placa = placa.cut(cq.Workplane("XY").add(cil(1.7, 5, (hx, hy, -4))))
-    for lado in (-1, 1):   # recorte das rodas (como no kit)
-        x0 = W / 2 - g.roda_largura - 2 * g.roda_folga
-        rc = g.roda_diametro / 2 + g.roda_folga
-        placa = placa.cut(cq.Workplane("XY").add(bloco(lado * (x0 + W / 2) / 2 + lado * 0.5, g.roda_pos_y, -4,
-                                                       W / 2 - x0 + 1, 2 * rc, 5)))
     for lado in (-1, 1):   # furos por onde os fios dos motores sobem
-        placa = placa.cut(cq.Workplane("XY").add(cil(4, 5, (lado * 35, g.roda_pos_y + 55, -4))))
+        placa = placa.cut(cq.Workplane("XY").add(cil(4, 5, (lado * FURO_FIOS_X, g.roda_pos_y + 55, -4))))
     return placa.val()
 
 
@@ -174,7 +174,8 @@ def motores_amarelos():
         caixa, eixo_y = motor(lado)
         s.append(caixa)
         # suportes em "T" de acrilico nao desenhados; eixo ate a roda
-        s.append(cil(2.7, 16, (lado * 45.5, eixo_y, g.roda_eixo_z), (lado, 0, 0)))
+        ate_roda = g.roda_pos_x - g.roda_largura / 2 - 45.5
+        s.append(cil(2.7, max(2, ate_roda + 2), (lado * 45.5, eixo_y, g.roda_eixo_z), (lado, 0, 0)))
     return junta(*s)
 
 
@@ -202,7 +203,7 @@ def capacitores_motor():
 def rodas(parte):
     s = []
     for lado in (-1, 1):
-        cx = lado * (W / 2 - g.roda_largura / 2)
+        cx = lado * g.roda_pos_x   # rodas do lado de fora do corpo estreito
         base = (cx - lado * g.roda_largura / 2, g.roda_pos_y, g.roda_eixo_z)
         if parte == "pneu":
             pneu = cq.Workplane("XY").add(cil(g.roda_diametro / 2, g.roda_largura, base, (lado, 0, 0))).cut(
@@ -215,12 +216,19 @@ def rodas(parte):
 
 
 def roda_boba(parte):
+    """Rodizio giratorio (2a foto do dono): placa quadrada em 4 espacadores,
+    garfo e rodinha, na ponta estreita (frente)."""
     chao = g.roda_eixo_z - g.roda_diametro / 2
-    y = L / 2 - 25
+    y = L / 2 - 20
+    esp = 12                                   # altura dos espacadores
+    rd = 13                                    # raio da rodinha
     if parte == "espacadores":
-        return junta(*[cil(2.5, 22, (sx * 12, y, -25)) for sx in (-1, 1)])
-    return junta(bloco(0, y, -29, 32, 14, 4), cil(9, 8, (0, y, -37)),
-                 cq.Solid.makeSphere(7.5, V(0, y, chao + 7.5), angleDegrees1=-90, angleDegrees2=90))
+        return junta(*[cil(2.5, esp, (sx * 12, y + sy * 12, -3 - esp)) for sx in (-1, 1) for sy in (-1, 1)])
+    z_placa = -3 - esp - 2
+    z_eixo = chao + rd
+    return junta(bloco(0, y, z_placa, 32, 32, 2), cil(9, 4, (0, y, z_placa - 4)),
+                 bloco(-7, y - 4, z_eixo, 2, 12, z_placa - 4 - z_eixo), bloco(7, y - 4, z_eixo, 2, 12, z_placa - 4 - z_eixo),
+                 cil(rd, 10, (-5, y - 6, z_eixo), (1, 0, 0)))
 
 
 def suporte_baterias():
@@ -333,12 +341,15 @@ def fios():
     f["08_driver_mais_linha1"] = ("vermelho", fio(rota(PINO_DRV["+"], furo_pb("c", 1), 27)))
     f["09_driver_menos_linha3"] = ("preto", fio(rota(PINO_DRV["-"], furo_pb("g", 3), 25.5)))
     f["10_driver_IN4_linha7"] = ("roxo", fio(rota(PINO_DRV["IN4"], furo_pb("h", 7), 18)))
-    # Motores -> driver (soldados nas duas pontas)
+    # Motores -> driver (soldados nas duas pontas): por baixo da base ate o
+    # furo do meio, sobem e vao ate os pads do driver
     for lado, saida, nome in ((-1, "A", "esquerdo"), (1, "B", "direito")):
         for i, (t, cor) in enumerate(zip(terminais_motor(lado), ("vermelho", "preto"))):
             pad = PAD_DRV[f"{saida}{i + 1}"]
             zf = 5 + i * 1.8
-            pts = [t, (t[0], t[1] + 4, t[2]), (t[0], t[1] + 4, zf), (pad[0], t[1] + 4, zf),
+            yf = t[1] + 4
+            hx = lado * FURO_FIOS_X + (i - 0.5) * 2
+            pts = [t, (t[0], yf, t[2]), (hx, yf, t[2]), (hx, yf, zf), (pad[0], yf, zf),
                    (pad[0], pad[1], zf), pad]
             f[f"11_motor_{nome}_{'ab'[i]}_saida_{saida}"] = (cor, fio(pts, (False, False)))
 
@@ -370,7 +381,7 @@ def fios():
 # ---------------------------------------------------------------------
 CORES = {
     "creme": (0.91, 0.89, 0.82), "creme2": (0.85, 0.82, 0.74), "terracota": (0.79, 0.44, 0.23),
-    "cinza": (0.54, 0.52, 0.47), "branco": (0.96, 0.96, 0.94), "acrilico": (0.72, 0.86, 0.95),
+    "cinza": (0.54, 0.52, 0.47), "branco": (0.96, 0.96, 0.94), "mdf": (0.78, 0.60, 0.38),
     "amarelo_tt": (0.98, 0.80, 0.10), "metal": (0.75, 0.75, 0.78), "borracha": (0.12, 0.12, 0.12),
     "latao": (0.80, 0.65, 0.30), "preto": (0.10, 0.10, 0.10), "azul_bat": (0.15, 0.35, 0.80),
     "azul_pcb": (0.10, 0.30, 0.65), "vermelho_pcb": (0.75, 0.10, 0.10), "verde_pcb": (0.05, 0.35, 0.20),
@@ -396,7 +407,7 @@ def montar():
             ("cabeca", car["cabeca"], "branco"), ("cabeca_tampa", car["cabeca_tampa"], "cinza"),
         ],
         "2_chassi_rodas_motores": [
-            ("chassi_acrilico", chassi(), "acrilico"), ("parafusos_M3", parafusos(), "metal"),
+            ("chassi_base", chassi(), "mdf"), ("parafusos_M3", parafusos(), "metal"),
             ("motores_caixa_reducao", motores_amarelos(), "amarelo_tt"), ("motores_metal", motores_metal(), "metal"),
             ("capacitores_100nF_motores", capacitores_motor(), "laranja_cap"),
             ("rodas_pneu", rodas("pneu"), "borracha"), ("rodas_cubo", rodas("cubo"), "amarelo_tt"),

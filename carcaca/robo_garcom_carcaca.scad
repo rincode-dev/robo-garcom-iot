@@ -17,50 +17,61 @@
 // "montagem" mostra o robo inteiro (nao e para imprimir)
 peca = "montagem"; // [montagem, saia, coluna, bandeja_baixo, bandeja_cima, cabeca, cabeca_tampa]
 
-/* [Chassi de acrilico (MEDIR)] */
-// Largura do chassi, de lado a lado (MEDIR)
-chassi_largura = 150;
-// Comprimento do chassi, da frente para tras (MEDIR)
-chassi_comprimento = 210;
-// Distancia entre os furos da esquerda e da direita, centro a centro (MEDIR)
-furos_dist_x = 120;
-// Distancia entre os furos da frente e de tras, centro a centro (MEDIR)
-furos_dist_y = 170;
-// Deslocamento dos furos para a frente (+) ou para tras (-) (MEDIR)
-furos_desloc_y = 0;
+/* [Chassi: base do kit 2WD, acrilico (MEDIR)] */
+// Corpo estreito, de lado a lado (da foto: 10 cm). As rodas ficam do lado de fora
+chassi_largura = 100;
+// Leque de tras, de ponta a ponta (da foto: 15 cm)
+chassi_largura_traseira = 150;
+// Da frente ate o meio da traseira (da foto: 21,2 cm)
+chassi_comprimento = 212;
+// Quanto o meio da frente passa dos cantos (MEDIR)
+frente_curva = 6;
+// Onde o leque comeca, medido da borda de tras (MEDIR)
+traseira_inicio = 33;
+// Das pontas do leque ate a borda de tras (MEDIR)
+traseira_ponta = 14;
+// Furos da saia, em pares esquerda/direita (MEDIR; se nao coincidir, furar com 3 mm, devagar: acrilico racha)
+furo_frente_x = 38;
+furo_frente_y = 88;
+furo_tras_x = 56;
+furo_tras_y = -88;
 // Furo para parafuso M3 rosqueado direto no plastico
 furo_parafuso = 2.8;
 
 /* [Rodas (MEDIR)] */
 roda_diametro = 65;
 roda_largura = 27;
+// Centro da roda ate o meio do robo, de lado (MEDIR)
+roda_pos_x = 65;
 // Posicao do eixo das rodas: + = frente, - = tras (MEDIR)
-roda_pos_y = -55;
+roda_pos_y = -29;
 // Altura do eixo em relacao ao topo do acrilico (negativo = abaixo) (MEDIR)
 roda_eixo_z = -12;
 // Espaco livre em volta da roda
-roda_folga = 5;
+roda_folga = 3;
 
 /* [Saia (base)] */
 saia_altura = 55;
-saia_raio_canto = 18;
+// A saia fica esse tanto para dentro da borda da base (o pneu nao raspa)
+saia_recuo = 2;
+saia_raio_canto = 4;
 // Espessura das paredes
 parede = 2;
 saia_teto = 2.5;
 // Abertura atras para tirar as baterias
 abertura_traseira = true;
-abertura_traseira_largura = 90;
+abertura_traseira_largura = 70;
 abertura_traseira_altura = 45;
 // Furo no teto em cima da chave liga/desliga
 furo_chave = true;
 // Posicao da chave: + = direita / frente (MEDIR)
-chave_pos_x = 40;
-chave_pos_y = -70;
+chave_pos_x = 23;
+chave_pos_y = -60;
 chave_largura = 14;
 chave_comprimento = 22;
 // Nome gravado na frente (deixe vazio para nao gravar)
 nome = "Bandejito 1.0";
-nome_tamanho = 11;
+nome_tamanho = 10;
 // Posicao da coluna: + = frente, - = tras
 coluna_pos_y = 0;
 
@@ -70,16 +81,16 @@ mostrar_eletronica = true;
 // Suporte 2x18650 (estimado pela foto: 78 x 41 x 22 mm + tampa)
 bateria_tam = [41, 78, 25];
 // Posicao do centro do suporte (x = lado, y = frente/tras)
-bateria_pos = [0, -60];
+bateria_pos = [0, -50];
 // Regulador LM2596 com display (66 x 35 x 13 mm, do anuncio)
 regulador_tam = [35, 66, 13];
-regulador_pos = [-45, 35];
+regulador_pos = [-27, 48];
 // Mini protoboard 170 furos (45 x 34 x 8,5 mm) + altura dos jumpers
 protoboard_tam = [34, 45, 22];
-protoboard_pos = [45, 35];
+protoboard_pos = [27, 52];
 // Driver MX1508 (estimado)
 driver_tam = [21, 24, 15];
-driver_pos = [45, -5];
+driver_pos = [32, -38];
 
 /* [Coluna] */
 // Trecho de baixo (entra na saia e segura a bandeja de baixo)
@@ -183,27 +194,48 @@ module dforma(d, h, extra = 0) {
 
 module acima(z = 0) { translate([-200, -200, z]) cube([400, 400, 400]); }
 
+// Contorno do chassi visto de cima: corpo estreito com a frente curva e
+// traseira larga em leque (o mesmo do gerar.py). +y = frente.
+// Arco simetrico que passa por (-a, y1), (0, y2) e (a, y1)
+function arco_sim(a, y1, y2, esq_para_dir = true, n = 24) =
+    let(c = (y2*y2 - y1*y1 - a*a) / (2*(y2 - y1)), r = abs(y2 - c), s = sign(y2 - c))
+    [for (i = [0 : n]) let(x = esq_para_dir ? -a + 2*a*i/n : a - 2*a*i/n)
+        [x, c + s*sqrt(max(0, r*r - x*x))]];
+
+module contorno2d() {
+    w = W/2; xt = chassi_largura_traseira/2;
+    yb = -L/2 + traseira_inicio;
+    offset(r = saia_raio_canto) offset(delta = -saia_raio_canto)
+        polygon(concat(arco_sim(w, L/2 - frente_curva, L/2),
+                       [[w, yb], [xt, yb - 6]],
+                       arco_sim(xt, -L/2 + traseira_ponta, -L/2, false),
+                       [[-xt, yb - 6], [-w, yb]]));
+}
+
+// Contorno extrudado; recuo > 0 encolhe para dentro
+module prisma(h, recuo = 0) { linear_extrude(h) offset(delta = -recuo) contorno2d(); }
+
 // ---------------------------------------------------------------------
 // Saia (base): parafusada no chassi, cobre a eletronica
 // ---------------------------------------------------------------------
-function furo(sx, sy) = [sx*furos_dist_x/2, furos_desloc_y + sy*furos_dist_y/2, 0];
+// sy = +1: par da frente; sy = -1: par de tras
+function furo(sx, sy) = sy > 0 ? [sx*furo_frente_x, furo_frente_y, 0] : [sx*furo_tras_x, furo_tras_y, 0];
 
 module saia() {
     aba_h = 8;
+    d = 30;   // alcance da rampa de cada aba, em diagonal para fora
     difference() {
         union() {
             difference() {
-                rrect(W, L, H, saia_raio_canto);
-                translate([0, 0, -1])
-                    rrect(W - 2*parede, L - 2*parede, H - saia_teto + 1, saia_raio_canto - parede);
+                prisma(H, saia_recuo);
+                translate([0, 0, -1]) prisma(H - saia_teto + 1, saia_recuo + parede);
             }
             // Abas de fixacao (com rampa de 45 graus: imprime sem suporte)
             intersection() {
-                rrect(W, L, H - saia_teto, saia_raio_canto);
+                prisma(H - saia_teto, saia_recuo + parede);
                 for (sx = [-1, 1], sy = [-1, 1]) hull() {
                     translate(furo(sx, sy)) cylinder(r = 6, h = aba_h);
-                    translate([sx*W/2, sy*L/2, 0])
-                        cylinder(r = 1, h = aba_h + norm([W/2 - abs(furo(sx,sy)[0]), L/2 - abs(furo(sx,sy)[1])]));
+                    translate(furo(sx, sy) + [sx*d/sqrt(2), sy*d/sqrt(2), 0]) cylinder(r = 1, h = aba_h + d);
                 }
             }
             // Encaixe da coluna (por dentro do teto)
@@ -216,29 +248,31 @@ module saia() {
         // Encaixe da coluna + passagem dos fios
         translate([0, coluna_pos_y, H - encaixe_prof]) dforma(coluna_d1, encaixe_prof + 1, folga);
         translate([0, coluna_pos_y, H - encaixe_prof - 5]) cylinder(d = canal_fios, h = 10);
-        // Rodas
+        // Rodas (ficam do lado de fora; so cortam a saia se encostarem nela)
         for (sx = [-1, 1])
-            translate([sx*(W/2 - (roda_largura + 2*roda_folga)/2 + 0.5), roda_pos_y, roda_eixo_z])
-                rotate([0, 90, 0])
-                    cylinder(d = roda_diametro + 2*roda_folga, h = roda_largura + 2*roda_folga + 1, center = true);
-        // Abertura traseira (baterias)
+            translate([sx*roda_pos_x, roda_pos_y, roda_eixo_z]) rotate([0, 90, 0])
+                cylinder(d = roda_diametro + 2*roda_folga, h = roda_largura + 2*roda_folga, center = true);
+        // Abertura traseira (baterias): atravessa a parede curva de tras
         if (abertura_traseira)
             translate([-abertura_traseira_largura/2, -L/2 - 1, -1])
-                cube([abertura_traseira_largura, parede + 2, abertura_traseira_altura + 1]);
+                cube([abertura_traseira_largura, traseira_ponta + parede + 3, abertura_traseira_altura + 1]);
         // Chave liga/desliga
         if (furo_chave)
             translate([chave_pos_x, chave_pos_y, H - saia_teto - 1])
                 rrect(chave_largura, chave_comprimento, saia_teto + 2, 2);
         // Ventilacao nas laterais
         for (sx = [-1, 1], i = [0 : 4])
-            translate([sx*W/2, 25 + i*13, H - 14])
+            translate([sx*(W/2 - saia_recuo), 25 + i*13, H - 14])
                 cube([parede*4, 4, 14], center = true);
-        // Nome na frente
+        // Nome na frente: a frente e curva, entao so a "casca" de 0,8 mm e gravada
         if (nome != "")
-            translate([0, L/2 - 0.8, H*0.45]) rotate([90, 0, 180])
-                linear_extrude(1.5)
-                    text(nome, size = nome_tamanho, halign = "center", valign = "center",
-                         font = "Liberation Sans:style=Bold");
+            intersection() {
+                translate([0, L/2 + 1 - (frente_curva + 12), H*0.45]) rotate([90, 0, 180])
+                    linear_extrude(frente_curva + 12)
+                        text(nome, size = nome_tamanho, halign = "center", valign = "center",
+                             font = "Liberation Sans:style=Bold");
+                difference() { prisma(H, saia_recuo); translate([0, 0, -1]) prisma(H + 2, saia_recuo + 0.8); }
+            }
     }
 }
 
@@ -388,9 +422,9 @@ cabeca_z0 = coluna_z0 + coluna_altura - encaixe_prof;
 
 module montagem() {
     // Chassi e rodas (so referencia, nao imprime)
-    %translate([0, 0, -3]) rrect(W, L, 3, 8);
+    %translate([0, 0, -3]) prisma(3);
     %for (sx = [-1, 1])
-        translate([sx*(W/2 - roda_largura/2), roda_pos_y, roda_eixo_z]) rotate([0, 90, 0])
+        translate([sx*roda_pos_x, roda_pos_y, roda_eixo_z]) rotate([0, 90, 0])
             cylinder(d = roda_diametro, h = roda_largura, center = true);
     // Eletronica (so referencia)
     if (mostrar_eletronica) for (e = [[bateria_tam, bateria_pos, "#222222"], [regulador_tam, regulador_pos, "#1f4fa0"],

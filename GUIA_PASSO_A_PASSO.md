@@ -289,8 +289,9 @@ Veja a **Etapa 14** do manual. Resumo:
 - **Uma linha reta + meia-volta** (decisão do dono em 2026-10-14; antes era um circuito fechado). Na ida, o robô conta as marcas (1, 2, 3) e para na marca da mesa pedida. Depois do "Entregue", ele **gira 180° no lugar** e volta contando as marcas para baixo até o balcão, onde gira de novo e fica virado para as mesas.
   - **Como ele sabe que deu meia-volta, sem medir o ângulo:** os sensores ficam 13,5 cm à frente do eixo das rodas. Girando em volta do eixo, eles saem da fita e só caem nela de novo depois de 180°, apontando para o outro lado.
   - **Giro suave:** em pulsos (liga/desliga os motores rapidinho), porque a menor velocidade dos motores ainda é rápida e poderia derrubar o que está na bandeja.
-  - **Espaço para girar:** o giro "varre" um círculo de ~36 cm de diâmetro em volta do eixo das rodas. **Mesas, cadeiras e pés de pessoas precisam ficar a pelo menos ~20 cm da fita.**
+  - **Espaço para girar:** o giro "varre" um círculo de ~29 cm de diâmetro em volta do eixo das rodas (a ponta da frente fica a ~14,5 cm do eixo, com a base do kit das fotos). **Mesas, cadeiras e pés de pessoas precisam ficar a pelo menos ~15 cm da fita.**
   - **Pontas da linha:** um bloco de fita (4 × 8 cm) no balcão e outro no fim da linha. Se a fita simplesmente acabasse, o robô acharia que se perdeu.
+  - **Onde vai a barra de sensores:** o rodízio do kit (roda boba giratória) fica no meio da frente, embaixo da base, justamente onde a barra de 5 sensores ficaria. A barra vai precisar de um suporte que a deixe **na frente do rodízio** (saindo um pouco da base), a 5–10 mm do chão. Resolver no Passo 5.4, com a base em mãos.
 
 ```
                 [MESA 1]                [MESA 3]

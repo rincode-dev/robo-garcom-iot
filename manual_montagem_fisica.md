@@ -114,7 +114,9 @@ VS Code, PlatformIO e compilador **já foram instalados** na Fase 1 do `GUIA_PAS
 
 Os kits variam um pouco, mas a sequência é sempre esta:
 
-1. **Remova o papel protetor** do acrílico (ambos os lados). Água morna ajuda.
+1. **Remova o papel protetor marrom** do acrílico (ambos os lados; água morna ajuda). No kit escolhido, a base parece madeira nas fotos do anúncio, mas as linhas vermelhas e as letras impressas mostram que é **acrílico com papel protetor**. Para conferir: raspe um cantinho com a unha; se o marrom descolar, é papel.
+   > Se o kit vier com um **suporte de 4 pilhas AA**, não use: 4 AA dão ~6 V, pouco para o regulador entregar 5 V estáveis. O projeto usa as 2 baterias 18650 (7,4 V).
+   > **Formato da base do kit escolhido:** corpo estreito de 10 cm com a frente arredondada e traseira larga "em leque" de 15 cm; 21,2 cm de comprimento. As rodas ficam **do lado de fora** do corpo estreito, perto do leque. A roda boba (rodízio giratório) vai embaixo da ponta estreita (a **frente**); os motores vão embaixo da base, com os discos pretos nos recortes em "+".
 2. **Fixe os motores** na placa de baixo usando as peças de acrílico em "T" (2 por motor) e os parafusos longos M3×30. O eixo do motor aponta **para fora**. Os dois motores ficam espelhados, com os terminais elétricos voltados **para dentro** do chassi.
 3. **Encaixe as rodas** nos eixos amarelos (encaixe por pressão, é duro mesmo). Não force o motor contra a mesa; segure a roda e o motor juntos.
 4. **Instale a roda boba** (rodízio) na extremidade oposta aos motores, usando os espaçadores de latão. Esse lado é a **frente** do robô; os motores ficam **atrás**.

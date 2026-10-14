@@ -73,10 +73,11 @@ const PX = W / WORLD_W;              // pixels por cm
 const MAX_WHEEL_CM_S = 68;           // motor TT 1:48 a 6 V com roda de 65 mm
 const BATTERY_V = 8.4;
 
-// Robô com as medidas reais (chassi 15 x 21 cm, rodas atrás, roda boba e câmera na frente).
+// Robô com as medidas reais: base do kit de 21,2 cm, corpo de 10 cm e rodas do lado de
+// fora (15 cm no total), eixo das rodas a 13,5 cm da frente, roda boba e câmera na frente.
 // A posição do robô (x, y) é o meio do eixo das rodas.
-const CHASSI_LARG = 15, CHASSI_COMP = 21;
-const CENTRO_A_FRENTE_DO_EIXO = 5.5; // o centro do chassi fica 5,5 cm à frente do eixo
+const CHASSI_LARG = 15, CHASSI_COMP = 21.2;
+const CENTRO_A_FRENTE_DO_EIXO = 2.9; // o centro do chassi fica 2,9 cm à frente do eixo
 const WHEEL_BASE = 12.3;             // distância entre as rodas (cm)
 const ROBOT_R = 11;                  // raio usado para colisão (em volta do centro do chassi)
 const SENSOR_FRENTE = 13.5;          // barra de sensores de linha: cm à frente do eixo
@@ -107,7 +108,7 @@ const AUTO = {
 // Postos: balcão + 3 mesas, alternando os lados da linha. A marca de cada mesa fica
 // 8 cm DEPOIS dela (no sentido da ida), para o centro do robô (onde ficam as bandejas)
 // parar bem ao lado da mesa. A mesa fica a 28 cm da linha: o giro no lugar "varre"
-// um círculo de ~18 cm de raio em volta do eixo das rodas e não pode bater nela.
+// um círculo de ~14,5 cm de raio em volta do eixo das rodas e não pode bater nela.
 const MESA_DIST = 28;
 const MESA_R = 9;
 const POSTOS = [

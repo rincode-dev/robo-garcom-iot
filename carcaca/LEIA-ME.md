@@ -47,21 +47,21 @@ Modelo **paramétrico** em OpenSCAD: todas as medidas ficam em números que voc�
 | `coluna.stl` | Ø36 × 125 | Em pé |
 | `bandeja_baixo.stl` | 136 × 190 × 11 | Deitada. Cabe numa mesa de 220 × 220 mm |
 | `bandeja_cima.stl` | 104 × 146 × 11 | Deitada |
-| `saia.stl` | 150 × 210 × 55 | De cabeça para baixo (teto na mesa). Precisa de uma mesa de pelo menos 220 × 220 mm |
+| `saia.stl` | 150 × 212 × 55 | De cabeça para baixo (teto na mesa). Precisa de uma mesa de pelo menos 220 × 220 mm |
 
 Altura total montada: cerca de **224 mm**.
 Configuração sugerida: PLA, camada de 0,2 mm, 3 paredes, preenchimento de 15%, **sem suportes**.
 
 ## Bandejas: retangulares ou redondas
 
-As bandejas são **retangulares com cantos arredondados** (desde 2026-10-13), na mesma proporção da base:
+As bandejas são **retangulares com cantos arredondados** (desde 2026-10-13), na proporção 1 : 1,4:
 
 | | Redondas (antes) | Retangulares (agora) |
 |---|---|---|
 | Bandeja de baixo | Ø130 · ≈133 cm² | 136 × 190 · ≈256 cm² (**1,9×**) |
 | Bandeja de cima | Ø100 · ≈79 cm² | 104 × 146 · ≈150 cm² (**1,9×**) |
 
-Nenhuma das duas passa da borda da base: o robô continua passando onde passava.
+Elas são mais largas que o corpo da base (10 cm), como a bandeja de um garçom, mas não passam da largura das rodas (~16 cm).
 Para voltar às redondas, troque em `medidas.txt` para `bandeja_formato = "redonda"` e rode o `GERAR.bat`.
 
 ## Protótipo demonstrativo (robô completo com eletrônica e fios)
@@ -109,12 +109,12 @@ Os 6 fios da ESP32-CAM **descem por dentro da coluna oca**. Esconda `1_carcaca` 
 
 - Os componentes são **blocos simplificados**, com medidas de anúncio ou estimadas.
 - **A ordem dos pinos da ESP32-CAM e do driver no modelo é ilustrativa.** Na montagem real, confira sempre pelo **nome impresso** na placa (manual, 8.1).
-- Posições da eletrônica, das rodas, dos furos e da chave são as estimativas marcadas "MEDIR" no `medidas.txt`. Com elas, os **parafusos de trás caem em cima do recorte das rodas**: mais um motivo para medir o chassi real antes de imprimir a saia.
+- O contorno da base veio da foto do anúncio (comprimento e larguras são as cotas da foto). As curvas da frente e de trás, as posições da eletrônica, das rodas, dos furos e da chave são estimativas marcadas "MEDIR" no `medidas.txt`: confira com régua antes de imprimir a saia.
 - Frente do robô = **lado para onde a câmera olha** (onde está o nome). Nesta carcaça, os motores ficam **atrás** e a roda boba na frente.
 
 ## Como montar
 
-1. A saia é parafusada no chassi com **4 parafusos M3 de baixo para cima**: passam pelos furos do acrílico e rosqueiam direto no plástico (furo de 2,8 mm).
+1. A saia é parafusada no chassi com **4 parafusos M3 de baixo para cima**: passam pelos furos da base e rosqueiam direto no plástico (furo de 2,8 mm). A base tem muitos furos; se nenhum coincidir com os da saia, dá para furar a base com broca de 3 mm (acrílico racha: devagar, sem pressão, com fita crepe por cima e madeira por baixo).
 2. A coluna encaixa na saia. O lado reto impede que ela gire.
 3. A bandeja de baixo desce pela coluna até o 1º degrau, e a de cima até o 2º. O furo das bandejas também tem um lado reto: gire a bandeja até ele "cair" na coluna, com o lado comprido apontando para a frente.
 4. A ESP32-CAM entra pela parte de trás da cabeça, encostada nos 4 apoios. A tampa de trás encaixa por pressão e o pino dela segura a placa.
@@ -135,12 +135,13 @@ Os 6 fios da ESP32-CAM **descem por dentro da coluna oca**. Esconda `1_carcaca` 
 
 | Medida | Situação |
 |---|---|
-| Chassi 150 × 210 mm | ✅ Do anúncio |
+| Base (acrílico com papel protetor marrom): 212 mm de comprimento, corpo de 100 mm, leque de 150 mm | ✅ Da foto do anúncio (2026-10-14) |
+| Curva da frente, começo do leque e pontas do leque | 🟡 Estimados pela foto (MEDIR) |
 | Regulador 66 × 35 × 13 mm | ✅ Do anúncio |
 | Protoboard 45 × 34 × 8,5 mm | ✅ Do anúncio |
 | ESP32-CAM 27 × 40,5 mm | ✅ Medida padrão da placa |
 | Suporte 2×18650 ≈ 78 × 41 × 25 mm | 🟡 Calculado pela foto (pilha 18 × 65 mm) |
-| **Distância entre os furos do chassi** | ⚠️ **MEDIR** (padrão 120 × 170) |
-| **Posição e altura do eixo das rodas** | ⚠️ **MEDIR** |
+| **Furos da saia na base** (frente ±38/+88, trás ±56/−88) | ⚠️ **MEDIR** (ou furar a base) |
+| **Posição e altura do eixo das rodas** | ⚠️ **MEDIR** (as 3 fotos dão entre ~12,3 e ~13,5 cm da frente; modelo usa 13,5. Rodas a ±65 mm do meio) |
 | **Posição da chave liga/desliga** | ⚠️ **MEDIR** |
 | **Posição da lente e do LED de flash na placa** | ⚠️ **MEDIR** (antes de imprimir a cabeça) |
