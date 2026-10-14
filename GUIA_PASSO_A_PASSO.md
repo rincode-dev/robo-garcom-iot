@@ -67,7 +67,7 @@ Ou seja, o código não tem erros e cabe com folga na placa.
 
 ## Passo 1.4: Rodar o simulador
 
-O simulador imita a ESP32-CAM no seu PC: **o mesmo painel, os mesmos comandos e a mesma parada de segurança**. No lugar da câmera, ele mostra o "salão" em miniatura visto de cima: um tapete de 2 × 1,5 m com o circuito de fita preta, a base (B), as mesas 1, 2 e 3 e o robô no tamanho real.
+O simulador imita a ESP32-CAM no seu PC: **o mesmo painel, os mesmos comandos e a mesma parada de segurança**. No lugar da câmera, ele mostra o "salão" em miniatura visto de cima: um tapete de 2 × 1,5 m com uma linha reta de fita preta, o balcão (B), as mesas 1, 2 e 3 e o robô no tamanho real.
 
 1. No VS Code: menu **Terminal → New Terminal**.
 2. Digite (Enter após cada linha):
@@ -282,29 +282,35 @@ Veja a **Etapa 14** do manual. Resumo:
 
 > **Só comece depois do Checkpoint da Fase 3** (robô funcionando no modo manual pelo celular). Nada desta fase muda a montagem da Fase 3: ela só **acrescenta** peças.
 
-**Objetivo (nível 3, escolhido pelo dono em 2026-10-14):** pela página no celular, alguém faz o pedido para uma mesa. O robô sai da base seguindo uma **fita preta no chão**, para na mesa certa, espera alguém confirmar a entrega e volta para a base. O modo manual pelo celular continua existindo.
+**Objetivo (nível 3, escolhido pelo dono em 2026-10-14):** pela página no celular, alguém faz o pedido para uma mesa. O robô sai do balcão (base) seguindo uma **fita preta no chão**, para na mesa certa, espera alguém confirmar a entrega, **dá meia-volta** e volta para o balcão pela mesma linha. O modo manual pelo celular continua existindo.
 
 ### Decisões já tomadas
 - **Segundo cérebro:** uma **ESP32 DevKit** cuida dos motores e dos sensores. A ESP32-CAM fica só com o vídeo, o Wi-Fi e a página de pedidos. Motivo: a ESP32-CAM não tem pinos livres para sensores. As duas placas conversam por 2 fios (serial).
-- **Circuito em volta (loop), sem cruzamentos:** o robô sempre anda no mesmo sentido e para na marca N (mesa N). Isso elimina as curvas de 90° e a meia-volta, a parte mais difícil.
+- **Uma linha reta + meia-volta** (decisão do dono em 2026-10-14; antes era um circuito fechado). Na ida, o robô conta as marcas (1, 2, 3) e para na marca da mesa pedida. Depois do "Entregue", ele **gira 180° no lugar** e volta contando as marcas para baixo até o balcão, onde gira de novo e fica virado para as mesas.
+  - **Como ele sabe que deu meia-volta, sem medir o ângulo:** os sensores ficam 13,5 cm à frente do eixo das rodas. Girando em volta do eixo, eles saem da fita e só caem nela de novo depois de 180°, apontando para o outro lado.
+  - **Giro suave:** em pulsos (liga/desliga os motores rapidinho), porque a menor velocidade dos motores ainda é rápida e poderia derrubar o que está na bandeja.
+  - **Espaço para girar:** o giro "varre" um círculo de ~36 cm de diâmetro em volta do eixo das rodas. **Mesas, cadeiras e pés de pessoas precisam ficar a pelo menos ~20 cm da fita.**
+  - **Pontas da linha:** um bloco de fita (4 × 8 cm) no balcão e outro no fim da linha. Se a fita simplesmente acabasse, o robô acharia que se perdeu.
 
 ```
-        ┌──── [MESA 1] ────── [MESA 2] ────┐
-        │                                  │
-     [BASE]                             [MESA 3]
-        │                                  │
-        └──────────────────────────────────┘
+                [MESA 1]                [MESA 3]
+                   │                       │
+ [BALCÃO] ■━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━■ fim
+                                  │
+                               [MESA 2]
+
+ ■ = bloco de ponta (4 × 8 cm)   ┿ = marca da mesa (fita atravessada, 8 cm)
 ```
 
 ### Degraus (cada um funciona sozinho)
 
 | Passo | O que fazer | Peças | Dificuldade |
 |---|---|---|---|
-| 5.1 | ✅ **No simulador (antes das peças):** salão virtual com o circuito, 3 mesas e a página de pedidos. Pronto em 2026-10-14 (veja abaixo) | — | ⭐ |
+| 5.1 | ✅ **No simulador (antes das peças):** salão virtual com a linha reta, 3 mesas, meia-volta e a página de pedidos. Pronto em 2026-10-14 (veja abaixo) | — | ⭐ |
 | 5.2 | Ligar a ESP32 DevKit e passar os motores para ela | ESP32 DevKit | ⭐⭐ |
 | 5.3 | **Freio automático:** parar se algo aparecer na frente (vale também no modo manual) | VL53L0X + janelinha na frente da saia | ⭐ |
-| 5.4 | **Seguir a linha** (oval de fita isolante) | Barra de 5 sensores TCRT5000 + fita | ⭐⭐⭐ |
-| 5.5 | **Parar na marca N** e voltar para a base | Marcas na fita (ou sensor de cor) | ⭐⭐ |
+| 5.4 | **Seguir a linha** (linha reta de fita isolante) | Barra de 5 sensores TCRT5000 + fita | ⭐⭐⭐ |
+| 5.5 | **Parar na marca N**, dar meia-volta e voltar para o balcão | Marcas na fita (ou sensor de cor) | ⭐⭐⭐ |
 | 5.6 | **Pedidos pelo celular** + botão "Entregue" | Botão (opcional) | ⭐⭐ |
 
 Tempo estimado: **~4 a 5 fins de semana**, contando a partir do robô manual pronto. O mais trabalhoso é ajustar o 5.4 (testes com o robô no chão).
@@ -318,19 +324,19 @@ As peças extras estão em `lista_compras_detalhada.md`, seção 5. **Ainda não
 3. Em **🤖 Robô**, toque em **🚚 Automático**. O robô já começa na base.
 4. Em **🍽️ Mesa**, escolha uma mesa e os itens e toque em **Enviar pedido**.
 5. Em **👩‍🍳 Cozinha**, toque em **✔ Pronto**. O robô sai sozinho, segue a fita, conta as marcas e para na mesa.
-6. Toque em **✅ Entregue**. Ele volta para a base e pega o próximo pedido pronto, se houver.
-7. Teste o freio: toque em **🚧 Obstáculo na pista** (uma "pessoa" aparece no lado de baixo). O robô para na frente dela e continua quando você tira o obstáculo.
+6. Toque em **✅ Entregue**. Ele dá meia-volta (fica roxo), volta pela linha até o balcão, gira de novo e pega o próximo pedido pronto, se houver.
+7. Teste o freio: toque em **🚧 Obstáculo na pista** (uma "pessoa" aparece na linha, entre as mesas 1 e 2). O robô para na frente dela e continua quando você tira o obstáculo.
 8. Teste o controle manual: com o robô andando sozinho, segure uma seta na página de controle manual. O humano assume, e o pedido volta para a fila. Para voltar ao automático: **📍 Colocar na base** e depois **🚚 Automático**.
 
-Na tela, os 5 pontinhos na frente do robô são os sensores de linha: ficam **vermelhos** quando estão em cima da fita. A cor do robô mostra o estado: azul = na base, verde = andando, amarelo = na mesa, vermelho = obstáculo ou perdido.
+Na tela, os 5 pontinhos na frente do robô são os sensores de linha: ficam **vermelhos** quando estão em cima da fita. A cor do robô mostra o estado: azul = no balcão, verde = andando, amarelo = na mesa, roxo = meia-volta, vermelho = obstáculo ou perdido.
 
 > O modo automático existe **só no simulador** por enquanto. O firmware do robô real ganha essas funções a partir do Passo 5.2, depois que as peças da Fase 5 chegarem.
 
 ## ✅ Checkpoint da Fase 5
 - [ ] Bandejito virtual atendendo pedidos no simulador (5.1)
 - [ ] Robô para sozinho diante de um obstáculo (5.3)
-- [ ] Robô dá voltas no circuito sem sair da linha (5.4)
-- [ ] Robô para na mesa pedida e volta para a base (5.5)
+- [ ] Robô vai e volta pela linha sem sair dela (5.4)
+- [ ] Robô para na mesa pedida, dá meia-volta e volta para o balcão (5.5)
 - [ ] Pedido feito pelo celular, entregue e confirmado (5.6)
 
 ---

@@ -82,10 +82,11 @@ const ROBOT_R = 11;                  // raio usado para colisão (em volta do ce
 const SENSOR_FRENTE = 13.5;          // barra de sensores de linha: cm à frente do eixo
 const SENSOR_PASSO = 1.2;            // distância entre os 5 sensores (cm)
 
-// Circuito: fita isolante preta de 1,9 cm, retângulo de cantos arredondados, sentido horário
+// Pista: UMA linha reta de fita isolante preta (1,9 cm). O balcão (base) fica na
+// ponta esquerda. O robô vai até a mesa, faz meia-volta (180°) e volta pela mesma linha.
 const FITA = 1.9;
-const PISTA = { x0: 30, y0: 30, x1: 170, y1: 120, r: 25 };
-const PONTOS = 0.5;                  // espaçamento das amostras do caminho (cm)
+const LINHA = { x0: 20, x1: 184, y: 80 };
+const BLOCO = 4;                     // comprimento das marcas de ponta (base e fim): 4 x 8 cm
 
 // Autonomia (valores iniciais; na Fase 5 vão para src/config.h)
 const AUTO = {
@@ -93,88 +94,46 @@ const AUTO = {
   kp: 22, kd: 0.35,                  // correção proporcional e derivativa na linha
   paraCm: 15, liberaCm: 22,          // freio do sensor de distância (VL53L0X)
   semLinhaS: 0.6,                    // sem ver a linha por mais que isso = perdido
+  // Meia-volta no lugar: rodas em sentidos opostos, em pulsos (liga/desliga) para girar
+  // devagar mesmo com o MOTOR_MIN_DUTY alto, sem derrubar o que está na bandeja.
+  giroDuty: CFG.minDuty,
+  giroPulsoS: 0.12, giroLigado: 0.5, // período do pulso e fração do tempo com o motor ligado
+  giroMaxS: 4,                       // sem reencontrar a linha nesse tempo = perdido
 };
 
 // ---------------------------------------------------------------------------
-// Geometria do circuito
+// Geometria da pista
 // ---------------------------------------------------------------------------
-function construirPista() {
-  const { x0, y0, x1, y1, r } = PISTA;
-  const ym = (y0 + y1) / 2;
-  const pts = [];
-  const reta = (ax, ay, bx, by) => {
-    const n = Math.max(1, Math.round(Math.hypot(bx - ax, by - ay) / PONTOS));
-    for (let i = 0; i < n; i++) pts.push({ x: ax + (bx - ax) * i / n, y: ay + (by - ay) * i / n });
-  };
-  const arco = (cx, cy, a0, a1) => {
-    const n = Math.max(1, Math.round(r * Math.abs(a1 - a0) / PONTOS));
-    for (let i = 0; i < n; i++) {
-      const a = a0 + (a1 - a0) * i / n;
-      pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
-    }
-  };
-  // Começa na base (meio do lado esquerdo), subindo; sentido horário na tela
-  reta(x0, ym, x0, y0 + r);
-  arco(x0 + r, y0 + r, Math.PI, 1.5 * Math.PI);
-  reta(x0 + r, y0, x1 - r, y0);
-  arco(x1 - r, y0 + r, 1.5 * Math.PI, 2 * Math.PI);
-  reta(x1, y0 + r, x1, y1 - r);
-  arco(x1 - r, y1 - r, 0, 0.5 * Math.PI);
-  reta(x1 - r, y1, x0 + r, y1);
-  arco(x0 + r, y1 - r, 0.5 * Math.PI, Math.PI);
-  reta(x0, y1 - r, x0, ym);
-  let s = 0;
-  pts.forEach((p, i) => {
-    if (i) s += Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y);
-    p.s = s;
-  });
-  return pts;
-}
-const PISTA_PTS = construirPista();
-const PISTA_LEN = PISTA_PTS[PISTA_PTS.length - 1].s;
-
-function pontoMaisProximo(x, y) {
-  let melhor = 0, dmin = Infinity;
-  PISTA_PTS.forEach((p, i) => {
-    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
-    if (d < dmin) { dmin = d; melhor = i; }
-  });
-  return { i: melhor, d: Math.sqrt(dmin) };
-}
-
-function pontoNaPista(s) {
-  s = ((s % PISTA_LEN) + PISTA_LEN) % PISTA_LEN;
-  let i = PISTA_PTS.findIndex(p => p.s >= s);
-  if (i < 0) i = 0;
-  const p = PISTA_PTS[i], q = PISTA_PTS[(i + 1) % PISTA_PTS.length];
-  const ang = Math.atan2(q.y - p.y, q.x - p.x);
-  return { x: p.x, y: p.y, ang };
-}
-
-// Postos: base + 3 mesas. A marca fica 8 cm DEPOIS do posto, para o centro do robô
-// (onde ficam as bandejas) parar bem ao lado da mesa.
-const ym = (PISTA.y0 + PISTA.y1) / 2;
-const POSTOS = [
-  { nome: 'Base', ponto: [PISTA.x0, ym], fora: [-20, 0] },
-  { nome: 'Mesa 1', ponto: [70, PISTA.y0], fora: [0, -20] },
-  { nome: 'Mesa 2', ponto: [130, PISTA.y0], fora: [0, -20] },
-  { nome: 'Mesa 3', ponto: [PISTA.x1, ym], fora: [20, 0] },
-].map(p => {
-  const s0 = PISTA_PTS[pontoMaisProximo(...p.ponto).i].s;
-  const marca = pontoNaPista(s0 + 8);
-  return { ...p, s: s0 + 8, marca, mesa: { x: p.ponto[0] + p.fora[0], y: p.ponto[1] + p.fora[1] } };
-});
+// Postos: balcão + 3 mesas, alternando os lados da linha. A marca de cada mesa fica
+// 8 cm DEPOIS dela (no sentido da ida), para o centro do robô (onde ficam as bandejas)
+// parar bem ao lado da mesa. A mesa fica a 28 cm da linha: o giro no lugar "varre"
+// um círculo de ~18 cm de raio em volta do eixo das rodas e não pode bater nela.
+const MESA_DIST = 28;
 const MESA_R = 9;
-const OBSTACULO = { x: 100, y: PISTA.y1, r: 6 }; // "pessoa" no lado de baixo do circuito
+const POSTOS = [
+  { nome: 'Base', x: LINHA.x0 + BLOCO / 2, lado: 0 },
+  { nome: 'Mesa 1', x: 70, lado: -1 },
+  { nome: 'Mesa 2', x: 115, lado: 1 },
+  { nome: 'Mesa 3', x: 160, lado: -1 },
+].map(p => ({
+  ...p,
+  marca: p.lado ? { x: p.x + 8, comp: FITA } : { x: p.x, comp: BLOCO },
+  mesa: p.lado ? { x: p.x, y: LINHA.y + p.lado * MESA_DIST } : { x: 8, y: LINHA.y },
+}));
+// Bloco de fim de linha: segurança, caso o robô passe da última mesa
+const FIM = { x: LINHA.x1 - BLOCO / 2, comp: BLOCO };
+const MARCAS = [...POSTOS.map(p => p.marca), FIM];
+const OBSTACULO = { x: 95, y: LINHA.y, r: 6 }; // "pessoa" na linha, entre as mesas 1 e 2
+
+// Onde o robô fica no balcão: virado para as mesas, com os sensores já na linha
+// (é exatamente onde ele termina a meia-volta depois de chegar no bloco da base).
+const POSE_BASE = { x: LINHA.x0 + BLOCO + SENSOR_FRENTE, y: LINHA.y, heading: 0 };
 
 function naFita(x, y) {
-  if (pontoMaisProximo(x, y).d < FITA / 2) return true;
-  return POSTOS.some(({ marca }) => {
-    const dx = x - marca.x, dy = y - marca.y;
-    const along = dx * Math.cos(marca.ang) + dy * Math.sin(marca.ang);
-    const across = -dx * Math.sin(marca.ang) + dy * Math.cos(marca.ang);
-    return Math.abs(along) < FITA / 2 && Math.abs(across) < 4; // marca: 1,9 x 8 cm, atravessada
-  });
+  const dy = Math.abs(y - LINHA.y);
+  if (dy < FITA / 2 && x >= LINHA.x0 && x <= LINHA.x1) return true;
+  // Marcas atravessadas na linha: 8 cm de largura
+  return dy < 4 && MARCAS.some(m => Math.abs(x - m.x) < m.comp / 2);
 }
 
 // ---------------------------------------------------------------------------
@@ -189,9 +148,10 @@ const robot = {
 
 const auto = {
   modo: 'manual',          // 'manual' | 'auto'
-  estado: 'manual',        // manual, na_base, indo, na_mesa, voltando, obstaculo, perdido
-  posicao: 0, alvo: 0,     // índice em POSTOS (0 = base)
+  estado: 'manual',        // manual, na_base, indo, na_mesa, girando, voltando, obstaculo, perdido
+  posicao: 0, alvo: 0,     // índice em POSTOS (0 = base); POSTOS.length = bloco de fim
   naMarca: false, semLinha: 0, ultimoErro: 0, antesObst: null,
+  giro: null,              // meia-volta em andamento: { fase, t, depois }
   pedidoAtual: null,
 };
 let obstaculoLigado = false;
@@ -199,13 +159,13 @@ const pedidos = [];
 let proximoId = 1;
 
 function colocarNaBase() {
-  const m = POSTOS[0].marca;
-  robot.heading = m.ang;
-  robot.x = m.x - Math.cos(m.ang) * SENSOR_FRENTE;
-  robot.y = m.y - Math.sin(m.ang) * SENSOR_FRENTE;
+  robot.heading = POSE_BASE.heading;
+  robot.x = POSE_BASE.x;
+  robot.y = POSE_BASE.y;
   robot.trail = [];
   auto.posicao = 0;
-  auto.naMarca = true;
+  auto.giro = null;
+  auto.naMarca = false;
   auto.semLinha = 0;
   auto.ultimoErro = 0;
   if (auto.modo === 'auto') auto.estado = 'na_base';
@@ -290,7 +250,7 @@ function collides(x, y, h) {
 }
 
 // ---------------------------------------------------------------------------
-// Modo autônomo: seguir a linha, contar marcas, atender pedidos
+// Modo autônomo: seguir a linha, contar marcas, meia-volta, atender pedidos
 // ---------------------------------------------------------------------------
 function despachar() {
   const p = pedidos.find(o => o.estado === 'pronto');
@@ -303,12 +263,48 @@ function despachar() {
   log(`[AUTO] Pedido #${p.id} -> ${POSTOS[p.mesa].nome}`);
 }
 
-function chegou() {
-  if (auto.estado === 'voltando') {
-    auto.estado = 'na_base';
-    log('[AUTO] Chegou na base');
-    return;
+// Meia-volta no lugar. Não precisa medir o ângulo: a barra de sensores está 13,5 cm
+// à frente do eixo, então, girando em volta do eixo, ela sai da fita e só cai nela
+// de novo depois de 180°, apontando para o outro lado.
+function iniciarGiro(depois) {
+  auto.estado = 'girando';
+  auto.giro = { fase: 'saindo', t: 0, depois };
+  log('[AUTO] Meia-volta (180 graus)');
+}
+
+function passoGiro(s, n, dt) {
+  const g = auto.giro;
+  g.t += dt;
+  if (g.fase === 'saindo' && n === 0) g.fase = 'procurando'; // a barra inteira saiu da fita
+  else if (g.fase === 'procurando' && s[2]) {                 // o sensor do meio achou a fita
+    auto.giro = null;
+    auto.naMarca = n >= 4;
+    auto.ultimoErro = 0;
+    auto.semLinha = 0;
+    auto.estado = g.depois;
+    log(g.depois === 'na_base' ? '[AUTO] No balcao, virado para as mesas'
+                               : '[AUTO] Meia-volta completa: voltando para o balcao');
+    return [0, 0];
   }
+  if (g.t > AUTO.giroMaxS) {
+    auto.giro = null;
+    auto.estado = 'perdido';
+    log('[AUTO] Meia-volta travou ou nao achou a linha (algo no caminho do giro?): parado');
+    return [0, 0];
+  }
+  // O sensor de distância gira junto com o robô e "varre" o entorno: se aparecer algo
+  // perto da frente, pausa o giro (sem contar o tempo) até liberar.
+  if (robot.distancia < AUTO.paraCm) {
+    g.t -= dt;
+    if (!g.pausado) { g.pausado = true; log('[AUTO] Algo perto durante a meia-volta: pausando'); }
+    return [0, 0];
+  }
+  if (g.pausado) { g.pausado = false; log('[AUTO] Livre: continuando a meia-volta'); }
+  const ligado = (g.t % AUTO.giroPulsoS) < AUTO.giroPulsoS * AUTO.giroLigado;
+  return ligado ? [-AUTO.giroDuty, AUTO.giroDuty] : [0, 0];
+}
+
+function chegouNaMesa() {
   auto.estado = 'na_mesa';
   const p = pedidos.find(o => o.id === auto.pedidoAtual);
   if (p) p.estado = 'na_mesa';
@@ -323,6 +319,7 @@ function autoStep(dt) {
   const marca = n >= 4;
 
   if (auto.estado === 'na_base') { despachar(); return [0, 0]; }
+  if (auto.estado === 'girando') return passoGiro(s, n, dt);
 
   if (auto.estado === 'obstaculo') {
     if (robot.distancia > AUTO.liberaCm) { auto.estado = auto.antesObst; log('[AUTO] Caminho livre, continuando'); }
@@ -338,10 +335,31 @@ function autoStep(dt) {
     return [0, 0];
   }
 
-  // Marca atravessada na fita: conta a posição (base -> mesa 1 -> 2 -> 3 -> base)
+  // Marca atravessada na fita: na ida conta para cima (balcão -> 1 -> 2 -> 3),
+  // na volta conta para baixo até a marca do balcão (posição 0).
   if (marca && !auto.naMarca) {
-    auto.posicao = (auto.posicao + 1) % POSTOS.length;
-    if (auto.posicao === auto.alvo) { auto.naMarca = true; chegou(); return [0, 0]; }
+    auto.naMarca = true;
+    if (auto.estado === 'indo') {
+      auto.posicao++;
+      if (auto.posicao === auto.alvo) { chegouNaMesa(); return [0, 0]; }
+      if (auto.posicao >= POSTOS.length) {
+        // Passou da última mesa sem achar a certa: o pedido volta para a fila
+        const p = pedidos.find(o => o.id === auto.pedidoAtual);
+        if (p) p.estado = 'pronto';
+        auto.pedidoAtual = null;
+        log('[AUTO] Fim da linha sem achar a mesa: voltando');
+        iniciarGiro('voltando');
+        return [0, 0];
+      }
+    } else {
+      auto.posicao--;
+      if (auto.posicao <= 0) {
+        auto.posicao = 0;
+        log('[AUTO] Chegou no balcao');
+        iniciarGiro('na_base');
+        return [0, 0];
+      }
+    }
   }
   auto.naMarca = marca;
 
@@ -466,11 +484,10 @@ const fundo = Buffer.alloc(W * H * 4);
       const linha = x % 16 === 0 || y % 16 === 0;
       px(x, y, linha ? [214, 214, 206] : [232, 232, 224]);
     }
-  for (const p of PISTA_PTS) fillCircle(p.x * PX, p.y * PX, (FITA / 2) * PX, [25, 25, 28]);
-  for (const p of POSTOS) {
-    fillRotRect(p.marca.x, p.marca.y, p.marca.ang, FITA, 8, [25, 25, 28]);
-  }
-  // Base (cozinha) e mesas
+  const preto = [25, 25, 28];
+  fillRect(LINHA.x0 * PX, (LINHA.y - FITA / 2) * PX, (LINHA.x1 - LINHA.x0) * PX, FITA * PX, preto);
+  for (const m of MARCAS) fillRotRect(m.x, LINHA.y, 0, m.comp, 8, preto);
+  // Base (balcão) e mesas
   const b = POSTOS[0].mesa;
   fillRect((b.x - 8) * PX, (b.y - 14) * PX, 16 * PX, 28 * PX, [176, 120, 60]);
   texto('B', b.x * PX, b.y * PX, 3, [255, 255, 255]);
@@ -484,7 +501,7 @@ const fundo = Buffer.alloc(W * H * 4);
 
 const COR_ESTADO = {
   manual: [220, 225, 235], na_base: [120, 170, 255], indo: [62, 207, 142], voltando: [62, 207, 142],
-  na_mesa: [245, 197, 66], obstaculo: [255, 93, 93], perdido: [255, 93, 93],
+  na_mesa: [245, 197, 66], girando: [180, 140, 255], obstaculo: [255, 93, 93], perdido: [255, 93, 93],
 };
 
 function render() {
@@ -539,7 +556,7 @@ const viewers = new Set();
 let fps = 0, frames = 0, fpsWindow = Date.now();
 
 setInterval(() => {
-  if (viewers.size === 0) { fps = 0; return; }
+  if (viewers.size === 0) { fps = 0; frames = 0; fpsWindow = Date.now(); return; }
   const jpg = render();
   for (const res of viewers) {
     res.write(`\r\n--${BOUNDARY}\r\nContent-Type: image/jpeg\r\nContent-Length: ${jpg.length}\r\n\r\n`);
@@ -581,6 +598,7 @@ function irParaManual(motivo) {
   if (auto.modo === 'manual') return;
   auto.modo = 'manual';
   auto.estado = 'manual';
+  auto.giro = null;
   const p = pedidos.find(o => o.id === auto.pedidoAtual && ['a_caminho', 'na_mesa'].includes(o.estado));
   if (p) p.estado = 'pronto'; // volta para a fila
   auto.pedidoAtual = null;
@@ -605,13 +623,13 @@ function rotaAuto(url, res) {
     const m = q('m');
     if (m === 'manual') { irParaManual('pedido pelo painel'); return text(res, 200, 'manual'); }
     if (m !== 'auto') return text(res, 400, 'use ?m=auto ou ?m=manual');
-    const p = PISTA_PTS[pontoMaisProximo(posSensor(2).x, posSensor(2).y).i];
-    const naBase = Math.abs(p.s - POSTOS[0].s) < 6 || Math.abs(p.s - POSTOS[0].s - PISTA_LEN) < 6;
+    const naBase = Math.hypot(robot.x - POSE_BASE.x, robot.y - POSE_BASE.y) < 6
+                   && Math.cos(robot.heading - POSE_BASE.heading) > 0.9;
     if (!naBase) return text(res, 409, 'Coloque o robo na base antes (botao "Colocar na base")');
     robot.dir = 'stop';
     auto.modo = 'auto';
     auto.posicao = 0;
-    auto.naMarca = true;
+    auto.naMarca = false;
     auto.estado = 'na_base';
     log('[AUTO] Modo automatico: esperando pedidos prontos');
     return text(res, 200, 'auto');
@@ -649,7 +667,7 @@ function rotaAuto(url, res) {
     if (p) { p.estado = 'entregue'; log(`[PED] Pedido #${p.id} entregue`); }
     auto.pedidoAtual = null;
     auto.alvo = 0;
-    auto.estado = 'voltando';
+    iniciarGiro('voltando');
     return text(res, 200, 'voltando');
   }
 
@@ -723,7 +741,7 @@ http.createServer((req, res) => {
   console.log('');
   console.log('=== Robo Garcom IoT - SIMULADOR ===');
   console.log(`Parametros lidos de src/config.h: ${JSON.stringify(CFG)}`);
-  console.log(`Circuito: ${PISTA_LEN.toFixed(0)} cm de fita, ${POSTOS.length - 1} mesas`);
+  console.log(`Pista: linha reta de ${LINHA.x1 - LINHA.x0} cm, ${POSTOS.length - 1} mesas, meia-volta na mesa e no balcao`);
   console.log('');
   console.log(`  Controle manual:     http://localhost:${CONTROL_PORT}`);
   console.log(`  Pedidos (autonomo):  http://localhost:${CONTROL_PORT}/pedidos`);

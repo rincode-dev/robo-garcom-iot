@@ -10,7 +10,7 @@
 
 > 🚧 **Projeto em construção.** O software e o simulador estão prontos e testados; as peças do robô físico estão a caminho.
 
-Protótipo em miniatura de um robô garçom controlado pelo navegador, com **vídeo ao vivo** e **controle em tempo real**, construído com uma **ESP32-CAM** de baixo custo (~R$ 250 em peças). A próxima etapa é transformá-lo num **garçom autônomo**, que segue uma fita no chão, para na mesa certa e volta para a base.
+Protótipo em miniatura de um robô garçom controlado pelo navegador, com **vídeo ao vivo** e **controle em tempo real**, construído com uma **ESP32-CAM** de baixo custo (~R$ 250 em peças). A próxima etapa é transformá-lo num **garçom autônomo**, que segue uma fita no chão, para na mesa certa, dá meia-volta e volta para o balcão.
 
 <p align="center">
   <img src="docs/imagens/modelo_3d.gif" alt="Modelo 3D do Bandejito girando: primeiro com a carcaça, depois por dentro, mostrando chassi, bateria, placas e fiação" width="420"><br>
@@ -18,8 +18,8 @@ Protótipo em miniatura de um robô garçom controlado pelo navegador, com **ví
 </p>
 
 <p align="center">
-  <img src="docs/imagens/simulador_autonomo.gif" alt="Simulador: o robô recebe um pedido, segue a fita até a mesa 2 e volta para a base" width="480"><br>
-  <em>Simulador: o robô recebe um pedido pelo celular, segue a fita até a mesa 2 e volta para a base.</em>
+  <img src="docs/imagens/simulador_autonomo.gif" alt="Simulador: o robô recebe um pedido, segue a linha até a mesa 2, dá meia-volta e volta para o balcão" width="560"><br>
+  <em>Simulador: o robô recebe um pedido pelo celular, segue a linha até a mesa 2, dá meia-volta (roxo) e volta para o balcão.</em>
 </p>
 
 ## O que ele faz
@@ -29,7 +29,7 @@ Protótipo em miniatura de um robô garçom controlado pelo navegador, com **ví
 - Controle por botões (toque/mouse) ou teclado (WASD/setas), com curvas, controle de velocidade e flash.
 - **Parada de segurança automática** se a conexão cair.
 - **Simulador** em Node.js: o mesmo painel e a mesma API, rodando no PC sem hardware.
-- **Garçom autônomo (no simulador):** fila de pedidos pelo celular, seguidor de linha com 5 sensores, contagem de mesas e freio diante de obstáculos.
+- **Garçom autônomo (no simulador):** fila de pedidos pelo celular, seguidor de linha com 5 sensores, contagem de mesas, meia-volta no lugar para voltar ao balcão e freio diante de obstáculos.
 - **Carcaça impressa em 3D**, paramétrica, com bandejas e cabeça que abriga a câmera.
 
 ## Telas
@@ -75,7 +75,8 @@ As duas telas acima são do **simulador**: o painel é exatamente o mesmo HTML q
 | Atualizar o firmware sem desmontar | OTA via Wi-Fi (partições `min_spiffs`) |
 | Testar o software antes de ter o hardware | Simulador que reaproveita o HTML e os parâmetros do firmware |
 | Autonomia sem pinos livres na ESP32-CAM | Planejada uma 2ª placa (ESP32 DevKit) para motores e sensores, ligada por serial |
-| Navegação autônoma simples e confiável | Circuito de fita em loop, sem cruzamentos: seguidor de linha PD + contagem de marcas para achar a mesa |
+| Navegação autônoma simples e confiável | Uma linha reta de fita: seguidor de linha PD + contagem de marcas (para cima na ida, para baixo na volta) para achar a mesa |
+| Voltar pela mesma linha sem encoder nem giroscópio | Meia-volta no lugar: a barra de sensores fica 13,5 cm à frente do eixo, então ela só reencontra a fita depois de 180°. Giro em pulsos de PWM para não derrubar a bandeja |
 | Carcaça que precisa se adaptar às medidas reais | Modelo paramétrico: um único `medidas.txt` gera STEP (Fusion 360), STL e o arquivo OpenSCAD |
 
 ## Carcaça 3D

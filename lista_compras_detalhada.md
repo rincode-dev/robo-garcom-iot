@@ -60,7 +60,7 @@ Só depois que o robô estiver funcionando no modo manual (Checkpoint da Fase 3)
 | **ESP32 DevKit V1** (30 pinos, USB) | Segundo cérebro: motores + sensores | R$ 35–45 |
 | **Sensor de distância a laser VL53L0X** (módulo I2C) | Freio automático diante de obstáculos | R$ 15–20 |
 | **Barra de sensores de linha com 5× TCRT5000** | Seguir a fita no chão | R$ 15–25 |
-| Fita isolante **preta**, 19 mm | O caminho do circuito | R$ 5 |
+| Fita isolante **preta**, 19 mm | A linha reta do caminho + as marcas das mesas e das pontas | R$ 5 |
 | Placas de EVA ou cartolina branca (~2 × 1,5 m, o mesmo tamanho do salão do simulador) | O "salão" em miniatura | R$ 15–30 |
 | *(opcional)* Sensor de cor **TCS34725** | Reconhecer a mesa pela cor da marca | R$ 20–25 |
 | *(opcional)* Botão de pressão (push button) | Confirmar "Entregue" no próprio robô | R$ 1 |
