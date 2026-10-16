@@ -31,7 +31,7 @@ Preços aproximados em R$ (Mercado Livre / AliExpress / lojas de eletrônica, ou
 | 10 | Resistor | **10 kΩ**, 1/4 W (marrom-preto-laranja) | 1 (compre 10) | R$ 2 | Pull-down no **GPIO12**: garante o boot da ESP32-CAM |
 | 11 | Capacitor eletrolítico | **470 µF a 1000 µF, 16 V** ou mais | 1–2 | R$ 2 – 5 | "Pulmão" de energia junto ao 5 V da ESP32-CAM. Evita reset quando o Wi-Fi transmite |
 | 12 | Capacitor cerâmico | **100 nF (código "104")** | 2 (compre 10) | R$ 2 | Soldado nos terminais de cada motor. Reduz o ruído elétrico que trava a câmera |
-| 13 | Parafusos **M3 × 10** (cabeça Phillips) | Para a carcaça impressa: rosqueiam direto no plástico | 4 (versão 1) ou 6 (versão 2: +2 do pé antitombo); compre um saquinho de 20 | R$ 5 | Prendem a saia na base do kit (e o pé antitombo, na versão 2). Filamento PLA: do amigo que imprime |
+| 13 | Parafusos **M3 × 10** (cabeça Phillips) | Para a carcaça impressa: rosqueiam direto no plástico | 6 (4 da saia + 2 do pé antitombo); compre um saquinho de 20 | R$ 5 | Prendem a saia e o pé antitombo na base do kit. Filamento PLA: do amigo que imprime |
 
 ## 3. Ferramentas
 

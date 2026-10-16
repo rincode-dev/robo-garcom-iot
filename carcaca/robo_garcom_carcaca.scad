@@ -15,7 +15,7 @@
 
 /* [Peca para ver ou exportar] */
 // "montagem" mostra o robo inteiro (nao e para imprimir)
-peca = "montagem"; // [montagem, saia, coluna, bandeja_baixo, bandeja_cima, cabeca, cabeca_tampa]
+peca = "montagem"; // [montagem, saia, coluna, bandeja_baixo, bandeja_cima, apoio_baixo, apoio_cima, pe_antitombo, tampa_traseira, tampa_lateral, cabeca, cabeca_tampa]
 
 /* [Chassi: base do kit 2WD, acrilico (MEDIR)] */
 // Corpo estreito, de lado a lado (da foto: 10 cm). As rodas ficam do lado de fora
@@ -58,39 +58,64 @@ saia_raio_canto = 4;
 // Espessura das paredes
 parede = 2;
 saia_teto = 2.5;
-// Abertura atras para tirar as baterias
+// Abertura atras (versao 2: acesso ao regulador LM2596, display e trimpot)
 abertura_traseira = true;
 abertura_traseira_largura = 70;
 abertura_traseira_altura = 45;
+// Versao 2: abertura lateral para tirar as pilhas (que ficam na frente)
+abertura_lateral = true;
+// -1 = lado esquerdo, 1 = lado direito
+abertura_lateral_lado = -1;
+abertura_lateral_pos_y = 56;
+abertura_lateral_largura = 62;
+abertura_lateral_altura = 45;
+// Versao 2: portinhas de encaixe nas duas aberturas
+portinhas = true;
+// Folga em volta da portinha (aumente se ficar dura)
+portinha_folga = 0.25;
 // Furo no teto em cima da chave liga/desliga
 furo_chave = true;
 // Posicao da chave: + = direita / frente (MEDIR)
 chave_pos_x = 23;
-chave_pos_y = -60;
+chave_pos_y = 48;
 chave_largura = 14;
 chave_comprimento = 22;
 // Nome gravado na frente (deixe vazio para nao gravar)
 nome = "Bandejito 1.0";
 nome_tamanho = 10;
-// Posicao da coluna: + = frente, - = tras
-coluna_pos_y = 0;
+// Posicao da coluna: + = frente, - = tras (versao 2: recuada)
+coluna_pos_y = -50;
+// Centro das bandejas no chassi (versao 2: ficam onde estavam; o furo vai para tras)
+bandeja_pos_y = 0;
+// Espessura das "espinhas" de apoio embaixo das bandejas (versao 2)
+apoio_espessura = 4;
+
+/* [Apoio antitombo (versao 2)] */
+// Pezinho embaixo da traseira da base: segura o robo se ele empinar
+antitombo = true;
+// Distancia da ponta ate o chao com o robo parado
+antitombo_folga = 6;
+antitombo_pos_y = -95;
+antitombo_largura = 60;
+// Parafusos M3 de cima para baixo, pela base (MEDIR)
+antitombo_furos_x = 22;
 
 /* [Eletronica (so para conferir se cabe; nao imprime)] */
 // Mostrar a eletronica na montagem (a saia fica transparente)
 mostrar_eletronica = true;
 // Suporte 2x18650 (estimado pela foto: 78 x 41 x 22 mm + tampa)
 bateria_tam = [41, 78, 25];
-// Posicao do centro do suporte (x = lado, y = frente/tras)
-bateria_pos = [0, -50];
-// Regulador LM2596 com display (66 x 35 x 13 mm, do anuncio)
+// Posicao do centro do suporte (x = lado, y = frente/tras). Versao 2: na frente
+bateria_pos = [0, 58];
+// Regulador LM2596 com display (66 x 35 x 13 mm, do anuncio). Versao 2: atras
 regulador_tam = [35, 66, 13];
-regulador_pos = [-27, 48];
+regulador_pos = [-27, -55];
 // Mini protoboard 170 furos (45 x 34 x 8,5 mm) + altura dos jumpers
 protoboard_tam = [34, 45, 22];
-protoboard_pos = [27, 52];
+protoboard_pos = [27, -5];
 // Driver MX1508 (estimado)
 driver_tam = [21, 24, 15];
-driver_pos = [32, -38];
+driver_pos = [32, -62];
 
 /* [Coluna] */
 // Trecho de baixo (entra na saia e segura a bandeja de baixo)
@@ -132,7 +157,7 @@ cab_largura = 52;
 cab_profundidade = 48;
 cab_altura = 68;
 // Quanto a camera olha para baixo (graus)
-inclinacao = 15;
+inclinacao = 10;
 placa_largura = 27;
 placa_altura = 40.5;
 placa_esp = 1.6;
@@ -260,10 +285,16 @@ module saia() {
         if (furo_chave)
             translate([chave_pos_x, chave_pos_y, H - saia_teto - 1])
                 rrect(chave_largura, chave_comprimento, saia_teto + 2, 2);
-        // Ventilacao nas laterais
+        // Abertura lateral (versao 2: pilhas na frente)
+        if (abertura_lateral)
+            translate([abertura_lateral_lado*(W/2 - saia_recuo) - 2*parede,
+                       abertura_lateral_pos_y - abertura_lateral_largura/2, -1])
+                cube([4*parede, abertura_lateral_largura, abertura_lateral_altura + 1]);
+        // Ventilacao nas laterais (versao 2: so no lado sem a abertura lateral)
         for (sx = [-1, 1], i = [0 : 4])
-            translate([sx*(W/2 - saia_recuo), 25 + i*13, H - 14])
-                cube([parede*4, 4, 14], center = true);
+            if (!(abertura_lateral && sx == abertura_lateral_lado))
+                translate([sx*(W/2 - saia_recuo), 25 + i*13, H - 14])
+                    cube([parede*4, 4, 14], center = true);
         // Nome na frente: a frente e curva, entao so a "casca" de 0,8 mm e gravada
         if (nome != "")
             intersection() {
@@ -282,9 +313,8 @@ module saia() {
 module coluna() {
     difference() {
         union() {
-            dforma(coluna_d1, encaixe_prof + 0.01);
-            translate([0, 0, encaixe_prof]) cylinder(d = coluna_d1, h = coluna_h1 - encaixe_prof);
-            // Trechos do meio e de cima com lado reto: as bandejas nao giram
+            // Todos os trechos com lado reto: bandejas e apoios nao giram
+            dforma(coluna_d1, coluna_h1);
             translate([0, 0, coluna_h1]) dforma(coluna_d2, coluna_h2);
             translate([0, 0, coluna_h1 + coluna_h2]) dforma(coluna_d3, coluna_h3);
         }
@@ -295,9 +325,12 @@ module coluna() {
 // ---------------------------------------------------------------------
 // Bandejas: o furo (com lado reto) passa pelo trecho fino e apoia no degrau do trecho grosso
 // ---------------------------------------------------------------------
+// Versao 2: a bandeja fica "avanco" mm a frente do furo da coluna
+avanco = bandeja_pos_y - coluna_pos_y;
 module forma_bandeja(largura, comprimento, d, h) {
-    if (bandeja_formato == "redonda") cylinder(d = d, h = h);
-    else rrect(largura, comprimento, h, bandeja_raio_canto);
+    translate([0, avanco, 0])
+        if (bandeja_formato == "redonda") cylinder(d = d, h = h);
+        else rrect(largura, comprimento, h, bandeja_raio_canto);
 }
 module bandeja(largura, comprimento, d, coluna_d) {
     r = 2.4;  // espessura da borda
@@ -306,7 +339,7 @@ module bandeja(largura, comprimento, d, coluna_d) {
             forma_bandeja(largura, comprimento, d, bandeja_esp);
             difference() {
                 forma_bandeja(largura, comprimento, d, bandeja_borda);
-                translate([0, 0, -1]) {
+                translate([0, avanco, -1]) {
                     if (bandeja_formato == "redonda") cylinder(d = d - 2*r, h = bandeja_borda + 2);
                     else rrect(largura - 2*r, comprimento - 2*r, bandeja_borda + 2, bandeja_raio_canto - r);
                 }
@@ -318,6 +351,31 @@ module bandeja(largura, comprimento, d, coluna_d) {
 }
 module bandeja_baixo() { bandeja(bandeja_baixo_largura, bandeja_baixo_comprimento, bandeja_baixo_d, coluna_d2); }
 module bandeja_cima()  { bandeja(bandeja_cima_largura,  bandeja_cima_comprimento,  bandeja_cima_d,  coluna_d3); }
+
+// ---------------------------------------------------------------------
+// Apoios ("espinhas", versao 2): anel em D na coluna + aleta embaixo do eixo
+// da bandeja, da traseira ate quase a frente. O fundo da aleta sobe para as pontas.
+// ---------------------------------------------------------------------
+h_apoio_baixo = coluna_h1 - encaixe_prof;                    // do teto da saia ate a bandeja de baixo
+h_apoio_cima = coluna_h2 - bandeja_esp - bandeja_colar;      // do colar de baixo ate a bandeja de cima
+module apoio(coluna_d, h, y0, y1, prof_anel, prof_ponta) {
+    anel_d = coluna_d + 2*folga + 6;
+    module aleta(ya, yb, pa, pb)
+        rotate([90, 0, 90]) linear_extrude(apoio_espessura, center = true)
+            polygon([[ya, h], [yb, h], [yb, h - pb], [ya, h - pa]]);
+    difference() {
+        union() {
+            cylinder(d = anel_d, h = h);
+            aleta(anel_d/2 - 1, y1, prof_anel, prof_ponta);
+            aleta(y0, -anel_d/2 + 1, prof_ponta, prof_anel);
+        }
+        translate([0, 0, -1]) dforma(coluna_d, h + 2, folga);
+    }
+}
+module apoio_baixo() apoio(coluna_d1, h_apoio_baixo, avanco - bandeja_baixo_comprimento/2 + 12,
+                           avanco + bandeja_baixo_comprimento/2 - 12, h_apoio_baixo, 6);
+module apoio_cima()  apoio(coluna_d2, h_apoio_cima, avanco - bandeja_cima_comprimento/2 + 10,
+                           avanco + bandeja_cima_comprimento/2 - 10, 12, 4);
 
 // ---------------------------------------------------------------------
 // Cabeca: caixa reta; a ESP32-CAM fica atras da "cara", inclinada para baixo.
@@ -394,6 +452,61 @@ module cabeca() {
 }
 
 // Tampa de tras: encaixa por pressao e empurra a placa contra os apoios
+// ---------------------------------------------------------------------
+// Apoio antitombo (versao 2): aba parafusada embaixo da base + parede +
+// ponta redonda que fica antitombo_folga acima do chao (desenhado montado)
+// ---------------------------------------------------------------------
+chao_z = roda_eixo_z - roda_diametro/2;
+module pe_antitombo() {
+    yc = antitombo_pos_y; w = antitombo_largura; r = 5;
+    zc = chao_z + antitombo_folga + r;   // centro da ponta redonda
+    difference() {
+        union() {
+            translate([-w/2, yc - 8, -7]) cube([w, 16, 4]);              // aba embaixo da base (3 mm)
+            translate([-w/2, yc - 3, zc]) cube([w, 6, -7 - zc + 0.01]);  // parede
+            translate([-w/2, yc, zc]) rotate([0, 90, 0]) cylinder(r = r, h = w);
+        }
+        for (sx = [-1, 1]) translate([sx*antitombo_furos_x, yc, -15]) cylinder(d = furo_parafuso, h = 12.01);
+    }
+}
+
+// ---------------------------------------------------------------------
+// Portinhas de encaixe (versao 2): moldura por fora, placa de reforco por
+// dentro, aba-gancho em cima (atras da parede), 2 ressaltos do "clique" e
+// puxador embaixo. Desenhadas montadas; imprimem em pe.
+// ---------------------------------------------------------------------
+module casca(a, b, z0, z1)
+    translate([0, 0, z0]) difference() {
+        prisma(z1 - z0, saia_recuo + a);
+        translate([0, 0, -1]) prisma(z1 - z0 + 2, saia_recuo + b);
+    }
+module caixa_uv(eixo, a0, a1, v0, v1, z0, z1) {
+    if (eixo == "x") translate([a0, v0, z0]) cube([a1 - a0, v1 - v0, z1 - z0]);
+    else translate([v0, a0, z0]) cube([v1 - v0, a1 - a0, z1 - z0]);
+}
+module tampa(eixo, u0, u1, v0, v1, altura, z_clique = 3) {
+    f = portinha_folga; m = 4; fora = 1.5; dentro = 1.2; aba = 4; ressalto = 0.5;
+    meio = (u0 + u1) / 2;
+    intersection() { casca(-0.01, parede, 0, altura - f); caixa_uv(eixo, u0 + f, u1 - f, v0, v1, 0, altura - f); }   // tampao
+    intersection() { casca(-fora, 0, 0, altura + m); caixa_uv(eixo, u0 - m, u1 + m, v0, v1, 0, altura + m); }       // moldura
+    intersection() { casca(parede - 0.01, parede + f + dentro, 0, altura - f);                                     // reforco
+                     caixa_uv(eixo, u0 + f, u1 - f, v0, v1, 0, altura - f); }
+    intersection() { casca(parede + f, parede + f + dentro, altura - 8, altura + aba);                             // aba-gancho
+                     caixa_uv(eixo, u0 + 8, u1 - 8, v0, v1, altura - 8, altura + aba); }
+    for (a = [[u0 - ressalto, u0 + f + 3], [u1 - f - 3, u1 + ressalto]])                                           // clique
+        intersection() { casca(parede + f, parede + f + dentro, z_clique, z_clique + 6);
+                         caixa_uv(eixo, a[0], a[1], v0, v1, z_clique, z_clique + 6); }
+    intersection() { casca(-fora - 3, -fora + 0.01, 0, 5); caixa_uv(eixo, meio - 10, meio + 10, v0, v1, 0, 5); }   // puxador
+}
+module tampa_traseira()
+    tampa("x", -abertura_traseira_largura/2, abertura_traseira_largura/2,
+          -L/2 - 6, -L/2 + traseira_ponta + parede + 8, abertura_traseira_altura);
+module tampa_lateral() {
+    xp = abertura_lateral_lado * (W/2 - saia_recuo);
+    y0 = abertura_lateral_pos_y - abertura_lateral_largura/2;
+    tampa("y", y0, y0 + abertura_lateral_largura, xp - 8, xp + 8, abertura_lateral_altura, 24);
+}
+
 module cabeca_tampa() {
     // Placa externa
     intersection() {
@@ -431,10 +544,15 @@ module montagem() {
               [protoboard_tam, protoboard_pos, "#f4f4f4"], [driver_tam, driver_pos, "#b02020"]])
         color(e[2]) translate([e[1][0] - e[0][0]/2, e[1][1] - e[0][1]/2, 0]) cube(e[0]);
     color("#e8e2d0", mostrar_eletronica ? 0.35 : 1) saia();
+    if (antitombo) color("#d9d2bd") pe_antitombo();
+    if (portinhas && abertura_traseira) color("#e8e2d0") tampa_traseira();
+    if (portinhas && abertura_lateral) color("#e8e2d0") tampa_lateral();
     translate([0, coluna_pos_y, 0]) {
         color("#d9d2bd") translate([0, 0, coluna_z0]) coluna();
         color("#c96f3b") translate([0, 0, coluna_z0 + coluna_h1]) bandeja_baixo();
         color("#c96f3b") translate([0, 0, coluna_z0 + coluna_h1 + coluna_h2]) bandeja_cima();
+        color("#d9d2bd") translate([0, 0, H]) apoio_baixo();
+        color("#d9d2bd") translate([0, 0, coluna_z0 + coluna_h1 + bandeja_esp + bandeja_colar]) apoio_cima();
         translate([0, 0, cabeca_z0]) {
             color("#f2eee3") cabeca();
             color("#8a8577") cabeca_tampa();
@@ -450,6 +568,12 @@ else if (peca == "saia") translate([0, 0, H]) rotate([180, 0, 0]) saia();    // 
 else if (peca == "coluna") coluna();
 else if (peca == "bandeja_baixo") bandeja_baixo();
 else if (peca == "bandeja_cima") bandeja_cima();
+else if (peca == "apoio_baixo") translate([0, 0, h_apoio_baixo]) rotate([180, 0, 0]) apoio_baixo();   // topo na mesa
+else if (peca == "apoio_cima") translate([0, 0, h_apoio_cima]) rotate([180, 0, 0]) apoio_cima();      // topo na mesa
+else if (peca == "pe_antitombo")                                                           // em pe, perfil na mesa
+    translate([0, -antitombo_pos_y, antitombo_largura/2]) rotate([0, 90, 0]) pe_antitombo();
+else if (peca == "tampa_traseira") tampa_traseira();                                      // ja em pe (borda de baixo na mesa)
+else if (peca == "tampa_lateral") tampa_lateral();
 else if (peca == "cabeca") translate([0, 0, fy]) rotate([-90, 0, 0]) cabeca();           // cara na mesa
 else if (peca == "cabeca_tampa")                                                           // tampa na mesa
     translate([0, 0, 2 - cab_tras]) rotate([90, 0, 0]) cabeca_tampa();

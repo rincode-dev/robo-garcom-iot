@@ -1,5 +1,9 @@
 """Gera a carcaca (conceito B) a partir de medidas.txt.
 
+Coluna recuada (coluna_pos_y) com as bandejas no lugar (bandeja_pos_y) e duas
+"espinhas" de apoio embaixo delas; pe antitombo e portinhas de encaixe.
+A primeira versao (coluna no centro) fica na marca Git bandejito-1.0-original.
+
 Saidas:
   step/<peca>.step   -> para abrir no Fusion 360 (solidos de verdade)
   step/montagem.step -> todas as pecas na posicao montada
@@ -200,11 +204,18 @@ def saia():
     if abertura_traseira:   # atravessa a parede curva de trás
         cortes.append(caixa(-abertura_traseira_largura / 2, abertura_traseira_largura / 2,
                             -L / 2 - 1, -L / 2 + traseira_ponta + parede + 2, -1, abertura_traseira_altura))
+    if abertura_lateral:    # v2: pilhas na frente saem pelo lado (só a parede, embaixo da bandeja)
+        xp = abertura_lateral_lado * (W / 2 - R0)
+        y0 = abertura_lateral_pos_y - abertura_lateral_largura / 2
+        cortes.append(caixa(xp - 2 * parede, xp + 2 * parede, y0, y0 + abertura_lateral_largura,
+                            -1, abertura_lateral_altura))
     if furo_chave:
         cortes.append(rrect(chave_largura, chave_comprimento, saia_teto + 2, 2)
                       .translate((chave_pos_x, chave_pos_y, H - saia_teto - 1)))
-    # Ventilacao nas laterais
+    # Ventilacao nas laterais (v2: só no lado sem a abertura lateral)
     for sx in (-1, 1):
+        if abertura_lateral and sx == abertura_lateral_lado:
+            continue
         for i in range(5):
             y = 25 + i * 13
             xp = sx * (W / 2 - R0)
@@ -237,8 +248,7 @@ def saia():
 # ---------------------------------------------------------------------
 def coluna():
     # Trechos do meio e de cima com lado reto: as bandejas nao giram
-    c = (dforma(coluna_d1, encaixe_prof + 0.01)
-         .union(cilindro(coluna_d1, coluna_h1 - encaixe_prof, (0, 0, encaixe_prof)))
+    c = (dforma(coluna_d1, coluna_h1)
          .union(dforma(coluna_d2, coluna_h2).translate((0, 0, coluna_h1)))
          .union(dforma(coluna_d3, coluna_h3).translate((0, 0, coluna_h1 + coluna_h2))))
     return c.cut(cilindro(canal_fios, coluna_altura + 2, (0, 0, -1)))
@@ -248,7 +258,7 @@ def bandeja(largura, comprimento, d, coluna_d):
     def forma(recuo, h, z=0.0):
         if bandeja_formato == "redonda":
             return cilindro(d - 2 * recuo, h, (0, 0, z))
-        return rrect(largura - 2 * recuo, comprimento - 2 * recuo, h, bandeja_raio_canto - recuo).translate((0, 0, z))
+        return rrect(largura - 2 * recuo, comprimento - 2 * recuo, h, bandeja_raio_canto - recuo).translate((0, AVANCO, z))
 
     b = (forma(0, bandeja_esp)
          .union(forma(0, bandeja_borda).cut(forma(2.4, bandeja_borda + 2, -1)))
@@ -262,6 +272,36 @@ def bandeja_baixo():
 
 def bandeja_cima():
     return bandeja(bandeja_cima_largura, bandeja_cima_comprimento, bandeja_cima_d, coluna_d3)
+
+
+# Apoios ("espinhas"): anel em D na coluna + aleta embaixo do eixo da bandeja,
+# da traseira ate quase a frente. Seguram o balanco que a coluna recuada criou.
+def apoio(coluna_d, h, y0, y1, prof_ring, prof_ponta):
+    anel_d = coluna_d + 2 * folga + 6
+    t = apoio_espessura
+    # aleta: perfil (y, z) com o topo em h e o fundo subindo para as pontas
+    def aleta(ya, yb, pa, pb):
+        pts = [(ya, h), (yb, h), (yb, h - pb), (ya, h - pa)]
+        return cq.Workplane("YZ").polyline(pts).close().extrude(t / 2, both=True)
+    a = (cilindro(anel_d, h)
+         .union(aleta(anel_d / 2 - 1, y1, prof_ring, prof_ponta))
+         .union(aleta(y0, -anel_d / 2 + 1, prof_ponta, prof_ring)))
+    return a.cut(dforma(coluna_d, h + 2, folga).translate((0, 0, -1)))
+
+
+AVANCO = bandeja_pos_y - coluna_pos_y
+H_APOIO_BAIXO = coluna_h1 - encaixe_prof                        # do teto da saia ate a bandeja de baixo
+H_APOIO_CIMA = coluna_h2 - bandeja_esp - bandeja_colar          # do colar de baixo ate a bandeja de cima
+
+
+def apoio_baixo():   # anel apoiado no teto da saia; a aleta afina para as pontas
+    return apoio(coluna_d1, H_APOIO_BAIXO, AVANCO - bandeja_baixo_comprimento / 2 + 12,
+                 AVANCO + bandeja_baixo_comprimento / 2 - 12, H_APOIO_BAIXO, 6)
+
+
+def apoio_cima():    # pendurado: aleta afina para a frente (deixa vão sobre a bandeja de baixo)
+    return apoio(coluna_d2, H_APOIO_CIMA, AVANCO - bandeja_cima_comprimento / 2 + 10,
+                 AVANCO + bandeja_cima_comprimento / 2 - 10, 12, 4)
 
 
 # ---------------------------------------------------------------------
@@ -331,6 +371,28 @@ def cabeca():
     return corpo
 
 
+# Apoio antitombo (v2): aba parafusada embaixo da base + parede + ponta redonda
+# (desliza se encostar no chao). Ja desenhado na posicao montada.
+CHAO_Z = roda_eixo_z - roda_diametro / 2          # chao, em relacao ao topo da base
+
+
+def pe_antitombo():
+    yc, w = antitombo_pos_y, antitombo_largura
+    base_z = -3                                   # embaixo da base de acrilico (3 mm)
+    r = 5
+    zc = CHAO_Z + antitombo_folga + r             # centro da ponta redonda
+    aba = caixa(-w / 2, w / 2, yc - 8, yc + 8, base_z - 4, base_z)
+    parede_pe = caixa(-w / 2, w / 2, yc - 3, yc + 3, zc, base_z - 3.99)
+    p = aba.union(parede_pe).union(cilindro(2 * r, w, (-w / 2, yc, zc), (1, 0, 0)))
+    try:
+        p = p.edges("|X").fillet(1.5)             # quinas da aba e da parede arredondadas
+    except Exception:
+        pass
+    for sx in (-1, 1):
+        p = p.cut(cilindro(furo_parafuso, 12, (sx * antitombo_furos_x, yc, base_z - 11.99)))
+    return p
+
+
 def cabeca_tampa():
     placa = (rcaixa(-cab_largura / 2, cab_largura / 2, cab_tras - 10, fy, 0, cab_altura, cab_r)
              .intersect(caixa(-100, 100, cab_tras - 2, cab_tras, -100, 300)))
@@ -358,6 +420,11 @@ PECAS = {
                       lambda o: o.translate((0, coluna_pos_y, coluna_z0 + coluna_h1))),
     "bandeja_cima": (bandeja_cima, lambda o: o,
                      lambda o: o.translate((0, coluna_pos_y, coluna_z0 + coluna_h1 + coluna_h2))),
+    "apoio_baixo": (apoio_baixo, lambda o: o.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, H_APOIO_BAIXO)),
+                    lambda o: o.translate((0, coluna_pos_y, H))),
+    "apoio_cima": (apoio_cima,
+                   lambda o: o.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, H_APOIO_CIMA)),
+                   lambda o: o.translate((0, coluna_pos_y, coluna_z0 + coluna_h1 + bandeja_esp + bandeja_colar))),
     "cabeca": (cabeca,
                lambda o: o.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, 0, fy)),
                lambda o: o.translate((0, coluna_pos_y, cabeca_z0))),
@@ -365,9 +432,74 @@ PECAS = {
                      lambda o: o.rotate((0, 0, 0), (1, 0, 0), 90).translate((0, 0, 2 - cab_tras)),
                      lambda o: o.translate((0, coluna_pos_y, cabeca_z0))),
 }
+if antitombo:   # em pe na mesa (o perfil para baixo): imprime sem suporte
+    PECAS["pe_antitombo"] = (pe_antitombo, lambda o: o.rotate((0, 0, 0), (0, 1, 0), 90), lambda o: o)
+
+
+# ---------------------------------------------------------------------
+# Portinhas de encaixe (v2): fecham a abertura de tras e a lateral.
+# Por fora: moldura de 1,5 mm (nao deixa entrar demais). Por dentro: placa de
+# reforco, aba-gancho em cima (entra atras da parede: encaixe inclinado) e
+# 2 ressaltos embaixo que dao o "clique" atras da parede. Puxador embaixo.
+# Desenhadas na posicao montada; imprimem em pe (a borda de baixo na mesa).
+# ---------------------------------------------------------------------
+TAMPA_FOLGA = portinha_folga   # do medidas.txt
+TAMPA_MOLDURA = 4        # quanto a moldura passa da abertura (lados e em cima)
+TAMPA_ESP_FORA = 1.5     # espessura da moldura por fora
+TAMPA_ESP_DENTRO = 1.2   # placa de reforco por dentro
+TAMPA_ABA = 4            # quanto a aba-gancho sobe atras da parede
+TAMPA_RESSALTO = 0.5     # quanto o ressalto passa da beirada da abertura
+
+
+def casca(a, b, z0, z1):
+    """Faixa do contorno da saia entre os recuos a e b (a < b), de z0 a z1."""
+    return prisma(z1 - z0, saia_recuo + a, z0).cut(prisma(z1 - z0 + 2, saia_recuo + b, z0 - 1))
+
+
+def tampa(eixo, u0, u1, v0, v1, altura, z_clique=3):
+    """eixo 'x': abertura de tras (a largura corre em x); 'y': lateral (largura em y).
+    u0..u1 = largura da abertura; v0..v1 = faixa do outro eixo que pega so a parede certa.
+    z_clique = altura dos ressaltos (longe das abas dos parafusos da saia)."""
+    f, m = TAMPA_FOLGA, TAMPA_MOLDURA
+    def caixa_uv(a0, a1, z0, z1):
+        return caixa(a0, a1, v0, v1, z0, z1) if eixo == "x" else caixa(v0, v1, a0, a1, z0, z1)
+    tampao = casca(-0.01, parede, 0, altura - f).intersect(caixa_uv(u0 + f, u1 - f, 0, altura - f))
+    moldura = casca(-TAMPA_ESP_FORA, 0, 0, altura + m).intersect(caixa_uv(u0 - m, u1 + m, 0, altura + m))
+    reforco = casca(parede - 0.01, parede + f + TAMPA_ESP_DENTRO, 0, altura - f).intersect(
+        caixa_uv(u0 + f, u1 - f, 0, altura - f))
+    aba = casca(parede + f, parede + f + TAMPA_ESP_DENTRO, altura - 8, altura + TAMPA_ABA).intersect(
+        caixa_uv(u0 + 8, u1 - 8, altura - 8, altura + TAMPA_ABA))
+    t = moldura.union(tampao).union(reforco).union(aba)
+    for a0, a1 in ((u0 - TAMPA_RESSALTO, u0 + f + 3), (u1 - f - 3, u1 + TAMPA_RESSALTO)):   # ressaltos do clique
+        t = t.union(casca(parede + f, parede + f + TAMPA_ESP_DENTRO, z_clique, z_clique + 6)
+                    .intersect(caixa_uv(a0, a1, z_clique, z_clique + 6)))
+    meio = (u0 + u1) / 2                                                                     # puxador
+    t = t.union(casca(-TAMPA_ESP_FORA - 3, -TAMPA_ESP_FORA + 0.01, 0, 5).intersect(caixa_uv(meio - 10, meio + 10, 0, 5)))
+    return t
+
+
+def tampa_traseira():
+    a = abertura_traseira_largura / 2
+    return tampa("x", -a, a, -L / 2 - 6, -L / 2 + traseira_ponta + parede + 8, abertura_traseira_altura)
+
+
+def tampa_lateral():
+    xp = abertura_lateral_lado * (W / 2 - saia_recuo)
+    y0 = abertura_lateral_pos_y - abertura_lateral_largura / 2
+    return tampa("y", y0, y0 + abertura_lateral_largura, xp - 8, xp + 8, abertura_lateral_altura,
+                 z_clique=24)   # embaixo, na frente, fica a aba do parafuso da saia
+
+
+if portinhas and abertura_traseira:
+    PECAS["tampa_traseira"] = (tampa_traseira, lambda o: o, lambda o: o)
+if portinhas and abertura_lateral:
+    PECAS["tampa_lateral"] = (tampa_lateral, lambda o: o, lambda o: o)
+
 
 CORES = {"saia": (0.91, 0.89, 0.82), "coluna": (0.85, 0.82, 0.74), "bandeja_baixo": (0.79, 0.44, 0.23),
-         "bandeja_cima": (0.79, 0.44, 0.23), "cabeca": (0.95, 0.93, 0.89), "cabeca_tampa": (0.54, 0.52, 0.47)}
+         "bandeja_cima": (0.79, 0.44, 0.23), "apoio_baixo": (0.85, 0.82, 0.74),
+         "apoio_cima": (0.85, 0.82, 0.74), "pe_antitombo": (0.85, 0.82, 0.74), "tampa_traseira": (0.91, 0.89, 0.82),
+         "tampa_lateral": (0.91, 0.89, 0.82), "cabeca": (0.95, 0.93, 0.89), "cabeca_tampa": (0.54, 0.52, 0.47)}
 
 
 def main():
@@ -402,11 +534,16 @@ def main():
     p = impressas
     erros += bandeja_3mf.montar(PASTA / "impressao", [
         ("1_cabeca_e_tampa_TESTE", [("cabeca", p["cabeca"], 60, 110, 0),
-                                    ("cabeca_tampa", p["cabeca_tampa"], 150, 110, 0)]),
+                                    ("cabeca_tampa", p["cabeca_tampa"], 150, 110, 0),
+                                    ("apoio_baixo", p["apoio_baixo"], 110, 32, 90)]
+                                   + ([("tampa_traseira", p["tampa_traseira"], 60, 182, 0)] if "tampa_traseira" in p else [])
+                                   + ([("tampa_lateral", p["tampa_lateral"], 160, 182, 90)] if "tampa_lateral" in p else [])),
         ("2_saia", [("saia", p["saia"], 110, 110, 0)]),
-        ("3_bandeja_baixo_e_coluna", [("bandeja_baixo", p["bandeja_baixo"], 80, 110, 0),
-                                      ("coluna", p["coluna"], 185, 110, 0)]),
-        ("4_bandeja_cima", [("bandeja_cima", p["bandeja_cima"], 110, 110, 0)]),
+        ("3_bandeja_baixo_coluna_e_pe", [("bandeja_baixo", p["bandeja_baixo"], 80, 110, 0),
+                                      ("coluna", p["coluna"], 185, 110, 0)]
+                                     + ([("pe_antitombo", p["pe_antitombo"], 185, 40, 0)] if antitombo else [])),
+        ("4_bandeja_cima_e_apoio", [("bandeja_cima", p["bandeja_cima"], 72, 110, 0),
+                                    ("apoio_cima", p["apoio_cima"], 180, 110, 0)]),
     ], mesa_impressora)
     if erros:
         sys.exit(f"[ERRO] {erros} peca(s) ou bandeja(s) com problema. Confira as medidas.")

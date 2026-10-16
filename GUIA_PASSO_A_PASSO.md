@@ -340,7 +340,7 @@ As medidas são as mesmas do simulador: o robô de verdade encontra a mesma pist
 8. **Faixa livre:** deixe **15 cm livres de cada lado da fita** (sem pés de mesa, cadeiras ou objetos), porque o robô gira no lugar no balcão e nas mesas. Os ramais ficam dentro dessa faixa, e tudo bem: são só fita no chão.
 9. **Robô:** coloque-o no balcão, **virado para as mesas**, com a barra de sensores em cima da fita, logo depois do bloco.
 
-> Testando no simulador antes? A página http://localhost:8080/pedidos mostra exatamente esta pista vista de cima, com os ramais. As imagens `maquete_cima.png` e `maquete_angulo.png` acima ainda são de **antes** dos ramais; o `maquete/step/maquete_completa.step` já tem os ramais.
+> Testando no simulador antes? A página http://localhost:8080/pedidos mostra exatamente esta pista vista de cima, com os ramais. A vista em ângulo (`maquete_angulo.png`) e o `maquete/step/maquete_completa.step` já têm os ramais; a planta de cima (`maquete_cima.png`) ainda é de **antes** deles.
 
 ### Ligações do alto-falante e do botão (planejado; tudo na ESP32 DevKit)
 

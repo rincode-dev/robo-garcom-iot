@@ -90,16 +90,17 @@ def rota(a, b, z):
 
 
 # ---------------------------------------------------------------------
-# Posicoes da eletronica (as mesmas da "eletronica" do .scad). O corpo do
-# chassi tem so 10 cm de largura: suporte das pilhas deitado no meio, de
-# frente para tras (as pilhas saem pela abertura de tras); regulador e
-# protoboard lado a lado na frente; driver ao lado do suporte, perto dos motores.
+# Posicoes da eletronica (as mesmas da "eletronica" do .scad). VERSAO 2: o
+# suporte das pilhas (a peca mais pesada) vai para a FRENTE, deitado no meio
+# (as pilhas saem pela abertura lateral), para o centro de massa ficar longe
+# do eixo das rodas. Regulador atras, a esquerda (display e trimpot pela
+# abertura de tras); protoboard no meio, a direita; driver atras, a direita.
 # ---------------------------------------------------------------------
-BAT = (0, -50)          # suporte 2x18650: 41 x 78 x 25
-LM = (-27, 48)          # LM2596: 35 x 66
-PB = (27, 52)           # mini protoboard: 34 x 45 x 8,5
-DRV = (32, -38)         # MX1508: 21 x 24
-FURO_FIOS_X = 8         # furos na base por onde os fios dos motores sobem (x = +-8)
+BAT = (0, 58)           # suporte 2x18650: 41 x 78 x 25 (v1: (0, -50))
+LM = (-27, -55)         # LM2596: 35 x 66 (v1: (-27, 48))
+PB = (27, -5)           # mini protoboard: 34 x 45 x 8,5 (v1: (27, 52))
+DRV = (32, -62)         # MX1508: 21 x 24 (v1: (32, -38))
+FURO_FIOS_X = 30        # furos na base por onde os fios dos motores sobem (v1: x = +-8, embaixo das pilhas agora)
 PB_TOPO = 8.5
 COL_Z0 = g.coluna_z0    # base da coluna (dentro da saia)
 
@@ -234,7 +235,7 @@ def roda_boba(parte):
 def suporte_baterias():
     caixa = cq.Workplane("XY").add(bloco(BAT[0], BAT[1], 0, 41, 78, 20)).cut(
         cq.Workplane("XY").add(bloco(BAT[0], BAT[1], 2, 37, 72, 20)))
-    chave = bloco(BAT[0] + 23, BAT[1] - 10, 6, 5, 12, 12)
+    chave = bloco(g.chave_pos_x, g.chave_pos_y, 6, 5, 12, 12)   # embaixo do furo da chave na saia
     return junta(caixa.val(), chave)
 
 
@@ -324,9 +325,9 @@ def esp32cam(parte):
 def fios():
     f = {}
 
-    # Bateria -> protoboard (fios do proprio suporte)
-    bat_mais = (BAT[0] + 5, BAT[1] + 39, 10)
-    bat_menos = (BAT[0] - 5, BAT[1] + 39, 10)
+    # Bateria -> protoboard (fios do proprio suporte, saindo pela ponta de tras: v2)
+    bat_mais = (BAT[0] + 5, BAT[1] - 39, 10)
+    bat_menos = (BAT[0] - 5, BAT[1] - 39, 10)
     f["01_bateria_mais_linha1"] = ("vermelho", fio(rota(bat_mais, furo_pb("a", 1), 21), (False, True)))
     f["02_bateria_menos_linha3"] = ("preto", fio(rota(bat_menos, furo_pb("a", 3), 19.5), (False, True)))
     # LM2596
@@ -403,6 +404,9 @@ def montar():
     grupos = {
         "1_carcaca": [
             ("saia", car["saia"], "creme"), ("coluna", car["coluna"], "creme2"),
+            ("apoio_baixo", car["apoio_baixo"], "creme2"), ("apoio_cima", car["apoio_cima"], "creme2"),
+            *([("pe_antitombo", car["pe_antitombo"], "creme2")] if "pe_antitombo" in car else []),
+            *[(n, car[n], "creme") for n in ("tampa_traseira", "tampa_lateral") if n in car],
             ("bandeja_baixo", car["bandeja_baixo"], "terracota"), ("bandeja_cima", car["bandeja_cima"], "terracota"),
             ("cabeca", car["cabeca"], "branco"), ("cabeca_tampa", car["cabeca_tampa"], "cinza"),
         ],

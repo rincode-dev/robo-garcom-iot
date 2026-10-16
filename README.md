@@ -30,7 +30,7 @@ Protótipo em miniatura de um robô garçom controlado pelo navegador, com **ví
 - **Parada de segurança automática** se a conexão cair, e **partida suave** (o robô alto não "empina" na arrancada).
 - **Simulador** em Node.js: o mesmo painel e a mesma API, rodando no PC sem hardware.
 - **Garçom autônomo (no simulador):** fila de pedidos pelo celular, seguidor de linha com 5 sensores, contagem de mesas, **giro de 90° para ficar de frente para a mesa**, **mensagem de voz** ("Mesa 2, seu pedido chegou!"), **botão verde** para o cliente confirmar, volta ao balcão e freio diante de obstáculos.
-- **Carcaça impressa em 3D**, paramétrica, com bandejas e cabeça que abriga a câmera. Uma **versão 2** (em teste) recua a coluna para dar mais espaço nas bandejas.
+- **Carcaça impressa em 3D**, paramétrica, com bandejas e cabeça que abriga a câmera. A coluna fica recuada, perto do eixo das rodas, para deixar a frente das bandejas livre; pilhas na frente, pé antitombo e portinhas de encaixe.
 
 ## Telas
 
@@ -79,7 +79,7 @@ As duas telas acima são do **simulador**: o painel é exatamente o mesmo HTML q
 | Voltar pela mesma linha sem encoder nem giroscópio | Meia-volta no lugar: a barra de sensores fica 13,5 cm à frente do eixo, então ela só reencontra a fita depois de 180°. Giro em pulsos de PWM para não derrubar a bandeja |
 | Ficar de frente para a mesa sem medir ângulo | Um "ramal" curto de fita, 13,5 cm antes da marca (sob o eixo): girando no lugar, o sensor do meio só o encontra depois de 90°. Mais 90° no mesmo sentido e ele volta à linha |
 | Robô alto e leve "empina" na arrancada | Partida suave no firmware (rampa de PWM de 0,5 s; frear continua imediato), pilhas (a peça mais pesada) na frente e um pé antitombo na traseira |
-| Mais espaço nas bandejas sem perder estabilidade | Versão 2: coluna 50 mm para trás, "espinhas" de apoio embaixo das bandejas e conta do centro de massa (validada no modelo 3D) |
+| Mais espaço nas bandejas sem perder estabilidade | Coluna 50 mm para trás, "espinhas" de apoio embaixo das bandejas e conta do centro de massa (validada no modelo 3D) |
 | Carcaça que precisa se adaptar às medidas reais | Modelo paramétrico: um único `medidas.txt` gera STEP (Fusion 360), STL e o arquivo OpenSCAD |
 
 ## Carcaça 3D
@@ -91,10 +91,10 @@ As duas telas acima são do **simulador**: o painel é exatamente o mesmo HTML q
 
 Detalhes em [`carcaca/LEIA-ME.md`](carcaca/LEIA-ME.md).
 
-**Versão 2 (em teste):** coluna recuada, +71% de área livre na bandeja de baixo e o dobro na de cima. A versão original continua intacta em `carcaca/`; as diferenças e a análise de estabilidade estão em [`carcaca_v2_coluna_recuada/LEIA-ME.md`](carcaca_v2_coluna_recuada/LEIA-ME.md).
+**Coluna recuada:** em relação à primeira versão (coluna no centro), +71% de área livre na bandeja de baixo e o dobro na de cima. A comparação e a análise de estabilidade estão no mesmo LEIA-ME.
 
 <p align="center">
-  <img src="carcaca_v2_coluna_recuada/imagens/v2_1_comparacao_3-4.png" alt="Comparação da versão atual com a versão 2, de coluna recuada, no mesmo ângulo de câmera" width="640">
+  <img src="carcaca/imagens/v2_1_comparacao_3-4.png" alt="Comparação da primeira versão (coluna no centro) com a atual (coluna recuada), no mesmo ângulo de câmera" width="640">
 </p>
 
 ## Estrutura
@@ -102,8 +102,7 @@ Detalhes em [`carcaca/LEIA-ME.md`](carcaca/LEIA-ME.md).
 ```
 src/           firmware C++ (PlatformIO, Arduino core): camera, motors, web_server, dashboard
 simulador/     robô virtual em Node.js (mesma API, vídeo gerado por software) + página de pedidos
-carcaca/       carcaça 3D paramétrica (CadQuery + OpenSCAD), STEP, STL e bandejas de impressão (.3mf)
-carcaca_v2_coluna_recuada/   versão 2 em teste: coluna recuada, pilhas na frente, pé antitombo
+carcaca/       carcaça 3D paramétrica (CadQuery + OpenSCAD): STEP, STL e bandejas de impressão (.3mf)
 maquete/       "salão" em miniatura para imprimir em 3D: mesas, cadeiras e balcão econômico (paramétricos)
 docs/          guia ilustrado da carcaça e imagens
 *.md           guia passo a passo, lista de compras, manual de montagem

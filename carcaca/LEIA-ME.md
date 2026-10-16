@@ -1,8 +1,95 @@
 # Carcaça 3D: conceito B · Torre de Serviço
 
-Modelo **paramétrico** em OpenSCAD: todas as medidas ficam em números que você muda no painel *Customizer*, sem mexer no código.
+Modelo **paramétrico**: todas as medidas ficam no `medidas.txt`; o `GERAR.bat` gera as peças para o Fusion 360 (STEP), para a impressora (STL e bandejas `.3mf`) e o modelo do OpenSCAD.
 
-![Montagem](imagens/montagem.png)
+![Robô completo](imagens/prototipo_completo.png)
+
+> **Esta é a versão oficial** (desde 2026-10-16): coluna recuada, pilhas na frente, pé antitombo e portinhas de encaixe. A **primeira versão** (coluna no centro, pilhas atrás) não está mais nesta pasta, mas continua guardada no Git, na marca `bandejito-1.0-original` (para ver: `git checkout bandejito-1.0-original -- carcaca` numa cópia do projeto).
+
+## O que mudou em relação à primeira versão
+
+Objetivo: **mais espaço livre na frente das bandejas**. A coluna (a "viga" central) sai do meio e vai para trás.
+
+| | Primeira versão (marca `bandejito-1.0-original`) | **Versão atual** |
+|---|---|---|
+| Posição da coluna (`coluna_pos_y`) | 0 (centro) | **−50 mm** (21 mm atrás do eixo das rodas) |
+| Bandejas (tamanho e lugar) | 136 × 190 e 104 × 146, no centro | **iguais**; só o furo da coluna vai para trás (`bandeja_pos_y = 0`) |
+| Área livre na frente, bandeja de baixo | 92 cm² | **158 cm² (+71%)** |
+| Área livre na frente, bandeja de cima | 50 cm² | **99 cm² (o dobro)** |
+| Sustentação da frente das bandejas | só o colar | colar + **2 espinhas de apoio** (peças novas) |
+| Coluna | trecho de baixo redondo | trecho de baixo com **lado reto** (a espinha de baixo não gira) |
+| **Pilhas** (suporte 2×18650, a peça mais pesada) | atrás, em y = −50 | **na frente, em y = +58** (centro de massa volta para perto do original) |
+| Regulador LM2596 / protoboard / driver | frente / frente / atrás | **atrás à esquerda / meio à direita / atrás à direita** |
+| Furos dos fios dos motores na base | x = ±8 | **x = ±30** (os de ±8 ficariam embaixo das pilhas) · MEDIR |
+| Como tirar as pilhas | abertura de trás | **abertura lateral** no lado esquerdo (62 × 45 mm, embaixo da bandeja; sem ventilação desse lado) |
+| Abertura de trás | pilhas | acesso ao **regulador** (display e trimpot do 5,0 V) |
+| Furo da chave liga/desliga (`chave_pos_x`, `chave_pos_y`) | (23, −60) | **(23, 48)**, em cima da chave do suporte das pilhas · MEDIR |
+| **Pé antitombo** (`pe_antitombo`, peça nova) | — | embaixo da traseira da base, 6 mm acima do chão, 2 parafusos M3 |
+| **Portinhas de encaixe** (`tampa_traseira`, `tampa_lateral`, peças novas) | aberturas sempre abertas | fecham a abertura de trás e a lateral, sem parafuso (aba-gancho em cima + "clique" embaixo) |
+| Inclinação da câmera (`inclinacao`) | 15° | **10°** (a borda da bandeja de cima não aparece no vídeo) |
+| Bandeja de impressão 1 | cabeça + tampa | cabeça + tampa **+ espinha de baixo + as 2 portinhas** (em pé) |
+| Bandeja de impressão 3 | `3_bandeja_baixo_e_coluna` | `3_bandeja_baixo_coluna_e_pe` (**+ pé antitombo**) |
+| Bandeja de impressão 4 | `4_bandeja_cima` | `4_bandeja_cima_e_apoio` (**+ espinha de cima**) |
+| PLA a mais | — | ~105 g (as duas espinhas + o pé + as duas portinhas) |
+| Firmware | arranca com a força toda | **partida suave** (`MOTOR_RAMP_MS = 500` no `src/config.h`), vale para as duas versões |
+| Chassi, rodas, motores, cabeça, cores, nome na frente | — | **iguais** |
+
+Mais comparações: [de frente](imagens/v2_2_comparacao_de_frente.png) · [perfil](imagens/v2_3_comparacao_perfil.png) · [área livre de cima](imagens/v2_4_area_livre_de_cima.png) · [eletrônica: pilhas na frente](imagens/v2_5_eletronica_pilhas_na_frente.png) · [abertura lateral e pé](imagens/v2_6_abertura_lateral_e_pe.png) · [portinhas](imagens/v2_7_portinhas.png) · [como a portinha trava](imagens/v2_8_portinha_como_encaixa.png).
+
+> O `manual_montagem_fisica.md` (na raiz do projeto) descreve esta versão (Etapa 8.6: onde fica cada peça).
+
+### As espinhas de apoio
+
+Com a coluna atrás, a frente da bandeja fica longe do apoio. Cada bandeja ganha uma **espinha**: um anel com lado reto que entra na coluna, mais uma aleta de 4 mm ao longo do meio da bandeja, da traseira até 1 cm antes da borda da frente.
+
+- **`apoio_baixo`**: o anel fica apoiado no **teto da saia** (30 mm de altura, num espaço que já era vazio). A aleta tem 30 mm junto da coluna e afina até 6 mm nas pontas.
+- **`apoio_cima`**: o anel fica apoiado no **colar da bandeja de baixo**. A aleta é rasa (12 mm junto da coluna e 4 mm nas pontas) para não roubar altura da bandeja de baixo: sobram 30 a 38 mm de vão embaixo dela.
+- As duas imprimem **de cabeça para baixo** (a borda que encosta na bandeja fica na mesa), **sem suporte**.
+
+### Conferências feitas (2026-10-16)
+
+| Conferência | Resultado |
+|---|---|
+| Peças válidas | todas são 1 sólido válido |
+| Colisões na montagem | nenhuma peça da carcaça encosta onde não deve; espinhas encostam na saia/colar e nas bandejas (0,0 mm) e têm folga de 0,3 mm na coluna |
+| Resistência (copo de 250 g na ponta da bandeja) | espinha de baixo: tensão 0,5 MPa (o PLA aguenta ~50, ou seja, ~100× de sobra), flecha ~0,6 mm · espinha de cima: 2,6 MPa (~19×), flecha ~2 mm |
+| Câmera (lente padrão de ~66°) | borda da bandeja de cima a 33° abaixo do horizonte; a imagem vai até ~30,5° → **fora do vídeo** |
+| Bandejas de impressão (`.3mf`) | 11 peças com malha fechada, volume positivo, dentro da mesa de 220 mm e em z = 0 |
+| Eletrônica nova (pilhas na frente) | nada encosta na saia, na coluna, nas abas dos parafusos nem no pé; só as 2 sobreposições ilustrativas que já existiam na primeira versão (pilha dentro do suporte, motor encostado na base) |
+| Pé antitombo | encosta embaixo da base; 34 mm da roda e 47 mm dos motores; encosta no chão com 5,2° de inclinação |
+| Portinhas | encostam na saia sem invadir a parede; puxadas 1 mm para fora, batem na parede (travam); nada mais encosta nelas (eletrônica, pé, abas dos parafusos) |
+| OpenSCAD | atualizado com a mesma geometria (coluna, bandejas, espinhas, abertura lateral, pé, portinhas e eletrônica) |
+
+### As portinhas de encaixe
+
+![Portinhas abertas e fechadas](imagens/v2_7_portinhas.png)
+
+- **Por fora:** só uma moldura fina (1,5 mm) em volta da abertura e um puxador embaixo. A de trás acompanha a curva da traseira.
+- **Por dentro:** uma placa de reforço, uma **aba-gancho** em cima (fica atrás da parede) e **2 ressaltos** de 0,5 mm nas laterais (o "clique"). Na portinha lateral, os ressaltos ficam no meio da altura, porque embaixo, na frente, fica a aba de um parafuso da saia.
+- **Fechar:** incline a portinha, encaixe a aba de cima atrás da parede e empurre a parte de baixo até o clique. **Abrir:** puxe o puxador para fora e solte a aba.
+- **Ajuste:** se ficar dura, aumente `portinha_folga` (0,25) no `medidas.txt`; se ficar solta, diminua. Para não usar, `portinhas = false`.
+- Imprimem **em pé** (a borda de baixo na mesa), sem suporte, ~20 g cada. Vale testar a lateral junto com a saia.
+
+![Como a portinha trava](imagens/v2_8_portinha_como_encaixa.png)
+
+### Estabilidade
+
+O robô se apoia nas rodas (atrás) e na roda boba (na frente). Ele só fica de pé se o **centro de massa** estiver **à frente do eixo das rodas**. Estimativa:
+
+| Situação | Centro de massa à frente do eixo | Empina para trás com... |
+|---|---|---|
+| Primeira versão, vazio | 23 mm | rampa de ~14° ou arrancada de ~2,4 m/s² |
+| Coluna recuada com as pilhas ainda atrás, vazio | 12,5 mm | rampa de ~7° ou arrancada de ~1,3 m/s² |
+| **Versão atual (pilhas na frente), vazio** | **21 mm** | rampa de ~12° ou arrancada de ~2,2 m/s² |
+| Versão atual, copo de 150 g **na frente** da bandeja de cima | 31 mm | rampa de ~16° ou arrancada de ~2,8 m/s² |
+| Versão atual, copo de 150 g **atrás da coluna** (pior caso) | 10 mm | rampa de ~6° ou arrancada de ~1,0 m/s² |
+
+**Três proteções juntas:**
+1. **Pilhas na frente**: o centro de massa fica quase igual ao da primeira versão.
+2. **Partida suave** no firmware: a roda já parte na força mínima e sobe até a máxima em 0,5 s, em vez de dar o tranco. Parar e frear continuam imediatos.
+3. **Pé antitombo**: se mesmo assim ele empinar, o pé encosta no chão a 5,2°, antes do ponto de tombar, e o robô volta para a roda boba.
+
+Mesmo assim, coloque os pedidos de preferência **na frente da coluna**.
 
 ## Arquivos
 
@@ -40,10 +127,15 @@ Modelo **paramétrico** em OpenSCAD: todas as medidas ficam em números que voc�
 
 > ⚠️ Mudanças feitas **dentro** do Fusion não voltam para o `medidas.txt`. Se gerar de novo, elas são substituídas.
 
-## As 6 peças
+## As 11 peças
 
 | Peça | Tamanho (mm) | Como imprimir |
 |---|---|---|
+| `apoio_baixo.stl` | 43 × 166 × 30 | De cabeça para baixo (borda reta na mesa), sem suporte |
+| `apoio_cima.stl` | 39 × 132 × 34 | De cabeça para baixo (borda reta na mesa), sem suporte |
+| `pe_antitombo.stl` | 36 × 16 × 60 | Em pé (o perfil na mesa), sem suporte |
+| `tampa_traseira.stl` | 78 × 11 × 49 | Em pé (a borda de baixo na mesa), sem suporte |
+| `tampa_lateral.stl` | 8 × 70 × 49 | Em pé (a borda de baixo na mesa), sem suporte |
 | `cabeca.stl` | 52 × 68 × 48 | **Imprima primeiro (teste).** Cara virada para a mesa |
 | `cabeca_tampa.stl` | 52 × 68 × 38 | Tampa deitada na mesa |
 | `coluna.stl` | Ø36 × 125 | Em pé |
@@ -62,10 +154,10 @@ Cada arquivo é **uma impressão**, com as peças já arrumadas numa mesa de **2
 
 | Arquivo | O que imprime |
 |---|---|
-| `1_cabeca_e_tampa_TESTE` | Cabeça + tampa (**imprima primeiro**, como teste, depois de medir a placa) |
+| `1_cabeca_e_tampa_TESTE` | Cabeça + tampa (**imprima primeiro**, como teste, depois de medir a placa) + espinha de baixo + as 2 portinhas |
 | `2_saia` | A saia (depois de medir a base do kit) |
-| `3_bandeja_baixo_e_coluna` | Bandeja de baixo + coluna |
-| `4_bandeja_cima` | Bandeja de cima |
+| `3_bandeja_baixo_coluna_e_pe` | Bandeja de baixo + coluna + pé antitombo |
+| `4_bandeja_cima_e_apoio` | Bandeja de cima + espinha de cima |
 
 - Abra o **`.3mf`** no fatiador: as peças chegam separadas e no lugar. O **`.stl`** de mesmo nome é a bandeja inteira num arquivo só (reserva).
 - O **`.step`** de mesmo nome tem as mesmas peças sólidas e posicionadas: abre no **Fusion 360**, no **Bambu Studio** e no **Orca Slicer**.
@@ -135,11 +227,14 @@ Os 6 fios da ESP32-CAM **descem por dentro da coluna oca**. Esconda `1_carcaca` 
 
 ## Como montar
 
+0. **Antes da saia:** parafuse o **pé antitombo** embaixo da traseira da base com 2 parafusos M3 × 10, de cima para baixo (a ponta redonda para baixo, atrás das rodas). Monte a eletrônica nas posições da tabela "O que muda": **pilhas na frente**, com a chave do suporte do lado direito, embaixo do furo da chave da saia.
 1. A saia é parafusada no chassi com **4 parafusos M3 de baixo para cima**: passam pelos furos da base e rosqueiam direto no plástico (furo de 2,8 mm). A base tem muitos furos; se nenhum coincidir com os da saia, dá para furar a base com broca de 3 mm (acrílico racha: devagar, sem pressão, com fita crepe por cima e madeira por baixo).
-2. A coluna encaixa na saia. O lado reto impede que ela gire.
-3. A bandeja de baixo desce pela coluna até o 1º degrau, e a de cima até o 2º. O furo das bandejas também tem um lado reto: gire a bandeja até ele "cair" na coluna, com o lado comprido apontando para a frente.
-4. A ESP32-CAM entra pela parte de trás da cabeça, encostada nos 4 apoios. A tampa de trás encaixa por pressão e o pino dela segura a placa.
-5. A cabeça encaixa no topo da coluna. Os 6 fios sobem pelo canal oco (18 mm).
+2. A coluna encaixa na saia, perto da traseira. O lado reto impede que ela gire.
+3. Desça a **espinha de baixo** pela coluna até ela assentar no teto da saia, com a aleta comprida apontando para a frente.
+4. A bandeja de baixo desce pela coluna até o 1º degrau, apoiada na espinha. O furo das bandejas também tem um lado reto: gire a bandeja até ele "cair" na coluna. A parte grande da bandeja fica **na frente** da coluna.
+5. Desça a **espinha de cima** até ela assentar no colar da bandeja de baixo, com a aleta comprida para a frente. Depois coloque a bandeja de cima, que desce até o 2º degrau.
+6. A ESP32-CAM entra pela parte de trás da cabeça, encostada nos 4 apoios. A tampa de trás encaixa por pressão e o pino dela segura a placa.
+7. A cabeça encaixa no topo da coluna. Os 6 fios sobem pelo canal oco (18 mm).
 
 ## Ver no OpenSCAD (alternativa, com o Customizer)
 

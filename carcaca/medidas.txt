@@ -1,6 +1,10 @@
 # =====================================================================
 # MEDIDAS DA CARCAÇA (conceito B · Torre de Serviço). Unidades: mm.
 #
+# Versão oficial: coluna recuada, pilhas na frente, pé antitombo e portinhas.
+# A primeira versão (coluna no centro, pilhas atrás) fica guardada na marca do
+# Git "bandejito-1.0-original". Os comentários "v2: era ..." dizem como era nela.
+#
 # Este é o "painel de números" da carcaça:
 #   1. Mude o número depois do "=". Pode usar vírgula ou ponto (40,5 ou 40.5).
 #   2. Salve o arquivo (Ctrl+S).
@@ -47,6 +51,14 @@ roda_pos_y         = -29    # eixo das rodas: + = frente, - = trás (MEDIR; as f
 roda_eixo_z        = -12    # altura do eixo vs. topo da base; negativo = abaixo (MEDIR)
 roda_folga         = 3      # espaço livre em volta da roda
 
+# --- Apoio antitombo (v2): pezinho embaixo da traseira da base ------------
+# Se o robô empinar numa arrancada, a ponta redonda encosta no chão e segura.
+antitombo          = true   # false = sem o pezinho
+antitombo_folga    = 6      # distância da ponta até o chão com o robô parado
+antitombo_pos_y    = -95    # posição: - = trás (atrás das rodas)
+antitombo_largura  = 60     # de lado a lado
+antitombo_furos_x  = 22     # 2 parafusos M3 de cima para baixo, pela base (MEDIR: furos da base)
+
 # --- Saia (base) -------------------------------------------------------
 # A saia segue o contorno do chassi e cobre só o corpo; as rodas ficam de fora.
 saia_altura        = 55
@@ -54,17 +66,28 @@ saia_recuo         = 2      # a saia fica esse tanto para dentro da borda da bas
 saia_raio_canto    = 4      # arredondado dos cantos do contorno
 parede             = 2      # espessura das paredes
 saia_teto          = 2.5
-abertura_traseira  = true   # abertura atrás para tirar as baterias
+abertura_traseira  = true   # abertura atrás (v2: acesso ao regulador LM2596, ao display e ao trimpot)
 abertura_traseira_largura = 70
 abertura_traseira_altura  = 45
-furo_chave         = true   # furo no teto em cima da chave liga/desliga
-chave_pos_x        = 23     # + = direita (MEDIR; o suporte fica deitado no meio, de frente para trás)
-chave_pos_y        = -60    # + = frente (MEDIR)
+# v2: as pilhas ficam na FRENTE (centro de massa mais para a frente): saem por esta abertura lateral
+abertura_lateral   = true
+abertura_lateral_lado    = -1     # -1 = lado esquerdo, 1 = lado direito (olhando o robô por trás)
+abertura_lateral_pos_y   = 56     # centro da abertura (= meio do suporte das pilhas)
+abertura_lateral_largura = 62
+abertura_lateral_altura  = 45
+# v2: portinhas de encaixe que fecham a abertura de trás e a lateral (aba em cima + "clique" embaixo)
+portinhas          = true
+portinha_folga     = 0.25   # folga em volta (aumente se ficar dura; diminua se ficar solta)
+furo_chave        = true   # furo no teto em cima da chave liga/desliga
+chave_pos_x        = 23     # + = direita (MEDIR; a chave fica na lateral do suporte das pilhas)
+chave_pos_y        = 48     # + = frente (MEDIR; v2: suporte das pilhas na frente, em y = 58)
 chave_largura      = 14
 chave_comprimento  = 22
 nome               = "Bandejito 1.0"   # nome gravado na frente ("" = sem nome)
 nome_tamanho       = 10     # a frente agora tem 10 cm: o nome precisa caber nela
-coluna_pos_y       = 0      # posição da coluna: + = frente, - = trás
+coluna_pos_y       = -50    # posição da coluna: + = frente, - = trás (v2: era 0)
+bandeja_pos_y      = 0      # centro das bandejas no chassi (v2: ficam onde estavam; o furo vai para trás)
+apoio_espessura    = 4      # v2: espessura das "espinhas" de apoio embaixo das bandejas
 
 # --- Coluna ------------------------------------------------------------
 coluna_d1          = 36     # trecho de baixo (entra na saia, segura a bandeja de baixo)
@@ -97,7 +120,7 @@ bandeja_colar      = 8      # altura do colar em volta do furo
 cab_largura        = 52
 cab_profundidade   = 48
 cab_altura         = 68
-inclinacao         = 15     # quanto a câmera olha para baixo (graus)
+inclinacao         = 10     # quanto a câmera olha para baixo (graus; v2: era 15, para a borda da bandeja de cima não aparecer no vídeo)
 placa_largura      = 27     # ESP32-CAM (do anúncio)
 placa_altura       = 40.5   # ESP32-CAM (do anúncio)
 placa_esp          = 1.6

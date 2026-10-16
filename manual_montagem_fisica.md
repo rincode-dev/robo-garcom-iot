@@ -130,7 +130,7 @@ Os kits variam um pouco, mas a sequência é sempre esta:
 
 1. Se os motores **não vieram com fios**: solde um fio **vermelho** em um terminal e um **preto** no outro, em cada motor (~15 cm). Nesse caso a cor é só convenção, porque motor DC não tem polaridade fixa; inverter os fios só inverte o sentido de giro.
 2. **Solde um capacitor cerâmico de 100 nF ("104")** entre os dois terminais de cada motor. Ele não tem polaridade. Isso reduz o ruído elétrico que pode travar a câmera.
-3. Passe os fios pelos furos do chassi para a parte de cima.
+3. Passe os fios pelos furos do chassi para a parte de cima. Use furos **ao lado** de onde ficarão as pilhas, a cerca de **3 cm do meio** para cada lado e uns 5 cm à frente do eixo das rodas: o meio da frente fica todo ocupado pelo suporte das pilhas (veja a Etapa 8.6). Se nenhum furo do kit cair ali, use o mais próximo.
 4. Identifique: **motor esquerdo** e **motor direito**, olhando o robô **por trás**, com a frente (lado da roda boba, para onde a câmera vai olhar) para longe de você. Marque com fita crepe "E" e "D".
 
 ---
@@ -299,9 +299,18 @@ O **IO12** é lido pela ESP32 no momento do boot para escolher a tensão da mem�
 
 ### 8.6 Fixação
 
-- Fixe a ESP32-CAM na **frente** do robô (lado da roda boba) com fita dupla-face ou espaçadores, **câmera apontando para frente**, sem obstruções. Com a carcaça 3D, ela fica dentro da cabeça, que já aponta para esse lado.
-- Fixe protoboard, LM2596 e driver no chassi.
-- O suporte de baterias vai no centro ou sobre o eixo dos motores, para equilibrar o peso.
+- Fixe a ESP32-CAM com a **câmera apontando para frente** (lado da roda boba), sem obstruções. Com a carcaça 3D, ela fica dentro da cabeça, que já aponta para esse lado.
+- Fixe cada peça no seu lugar com fita dupla-face espessa. As posições abaixo são as da carcaça 3D, que foi desenhada em volta delas (o desenho completo está em `carcaca/step/prototipo_completo.step` e em `carcaca/imagens/prototipo_cima.png`):
+
+| Peça | Onde fica (olhando o robô de cima, com a frente para cima) | Por quê |
+|---|---|---|
+| **Suporte das 2 pilhas 18650** | **Na frente**, deitado no meio, com as pilhas de frente para trás e a **chave virada para o lado direito** | É a peça mais pesada: na frente, segura o robô alto para ele não "empinar" para trás. A chave fica embaixo do furo da chave na saia. As pilhas saem pela **portinha do lado esquerdo** da saia |
+| **LM2596** (regulador com display) | **Atrás, do lado esquerdo**, com o display para cima | Pela **portinha de trás** dá para ver o display e girar o parafusinho (trimpot) do 5,0 V |
+| **Mini protoboard** | No meio, do lado direito (entre as pilhas e o driver) | Fica perto de tudo: é o "hub" de energia |
+| **Driver dos motores** | **Atrás, do lado direito**, perto dos motores | Fios curtos até os motores |
+| **ESP32-CAM** | Dentro da cabeça, em cima da coluna (que fica atrás, quase em cima do eixo das rodas) | Os 6 fios descem pelo canal oco da coluna |
+
+- **Pé antitombo** (peça impressa da carcaça): parafuse **embaixo da traseira da base**, atrás das rodas, com 2 parafusos M3 × 10 de cima para baixo. A ponta redonda fica uns 6 mm acima do chão: se o robô empinar, ela encosta e segura.
 - Organize os cabos com abraçadeiras. Nada pode encostar nas rodas.
 
 ### 8.7 Diagrama completo

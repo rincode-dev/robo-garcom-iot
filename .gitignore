@@ -6,7 +6,6 @@
 simulador/node_modules/
 carcaca/.venv/
 carcaca/__pycache__/
-carcaca_v2_coluna_recuada/__pycache__/
 
 # Arquivos pessoais do dono (não publicar)
 Pictures/
