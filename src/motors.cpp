@@ -24,6 +24,12 @@ SemaphoreHandle_t gLock = nullptr;
 volatile uint32_t gLastCommandMs = 0;
 volatile Direction gDirection = Direction::Stop;
 
+// Partida suave: duty com sinal pedido pelo comando (alvo) e o aplicado na
+// ponte H, que sobe aos poucos até o alvo. Protegidos por gLock.
+int gTargetLeft = 0, gTargetRight = 0;
+float gAppliedLeft = 0, gAppliedRight = 0;
+uint32_t gLastRampMs = 0;
+
 // --- Camada de compatibilidade LEDC (Arduino core 2.x e 3.x) ---------------
 void pwmAttach(uint8_t pin, uint8_t channel) {
 #if ESP_ARDUINO_VERSION_MAJOR >= 3
@@ -73,6 +79,37 @@ class Guard {
   ~Guard() { xSemaphoreGive(gLock); }
 };
 
+// Um passo da rampa: aumentar a força sobe no máximo maxStep; partir do zero
+// (ou inverter) começa no MOTOR_MIN_DUTY; reduzir e parar são imediatos.
+float rampToward(float applied, int target, float maxStep) {
+  if (target == 0 || MOTOR_RAMP_MS == 0) return target;
+  const float sign = (target > 0) ? 1.0f : -1.0f;
+  const float want = fabsf(static_cast<float>(target));
+  const bool sameWay = (applied > 0) == (target > 0) && applied != 0;
+  if (!sameWay) return sign * min(want, static_cast<float>(MOTOR_MIN_DUTY));
+  const float now = fabsf(applied);
+  if (want <= now) return target;
+  return sign * min(want, now + maxStep);
+}
+
+// Chamar somente com gLock adquirido. elapsedMs = tempo desde o último passo.
+void rampLocked(uint32_t elapsedMs) {
+  const uint32_t dt = (elapsedMs > 50) ? 50 : elapsedMs;  // loop atrasado: não pula a rampa
+  const float maxStep = static_cast<float>(MOTOR_MAX_DUTY - MOTOR_MIN_DUTY) * dt /
+                        (MOTOR_RAMP_MS > 0 ? MOTOR_RAMP_MS : 1);
+  const float left = rampToward(gAppliedLeft, gTargetLeft, maxStep);
+  const float right = rampToward(gAppliedRight, gTargetRight, maxStep);
+  if (left != gAppliedLeft) { gAppliedLeft = left; setMotor(kLeft, lroundf(left)); }
+  if (right != gAppliedRight) { gAppliedRight = right; setMotor(kRight, lroundf(right)); }
+}
+
+void setTargetsLocked(int left, int right) {
+  gTargetLeft = left;
+  gTargetRight = right;
+  gLastRampMs = millis();
+  rampLocked(0);  // parar/reduzir na hora; partir já no MOTOR_MIN_DUTY
+}
+
 // Chamar somente com gLock adquirido.
 void applyLocked(Direction dir, uint8_t speedPercent) {
   const int duty = percentToDuty(speedPercent);
@@ -85,15 +122,15 @@ void applyLocked(Direction dir, uint8_t speedPercent) {
 
   gDirection = (duty == 0) ? Direction::Stop : dir;
   switch (gDirection) {
-    case Direction::Forward:  setMotor(kLeft, duty);       setMotor(kRight, duty);      break;
-    case Direction::Backward: setMotor(kLeft, -duty);      setMotor(kRight, -duty);     break;
-    case Direction::Left:     setMotor(kLeft, -turnDuty);  setMotor(kRight, turnDuty);  break;
-    case Direction::Right:    setMotor(kLeft, turnDuty);   setMotor(kRight, -turnDuty); break;
-    case Direction::ForwardLeft:   setMotor(kLeft, innerDuty);   setMotor(kRight, duty);        break;
-    case Direction::ForwardRight:  setMotor(kLeft, duty);        setMotor(kRight, innerDuty);   break;
-    case Direction::BackwardLeft:  setMotor(kLeft, -innerDuty);  setMotor(kRight, -duty);       break;
-    case Direction::BackwardRight: setMotor(kLeft, -duty);       setMotor(kRight, -innerDuty);  break;
-    case Direction::Stop:     setMotor(kLeft, 0);          setMotor(kRight, 0);         break;
+    case Direction::Forward:  setTargetsLocked(duty, duty);            break;
+    case Direction::Backward: setTargetsLocked(-duty, -duty);          break;
+    case Direction::Left:     setTargetsLocked(-turnDuty, turnDuty);   break;
+    case Direction::Right:    setTargetsLocked(turnDuty, -turnDuty);   break;
+    case Direction::ForwardLeft:   setTargetsLocked(innerDuty, duty);    break;
+    case Direction::ForwardRight:  setTargetsLocked(duty, innerDuty);    break;
+    case Direction::BackwardLeft:  setTargetsLocked(-innerDuty, -duty);  break;
+    case Direction::BackwardRight: setTargetsLocked(-duty, -innerDuty);  break;
+    case Direction::Stop:     setTargetsLocked(0, 0);                  break;
   }
 }
 
@@ -105,6 +142,8 @@ void begin() {
   pwmAttach(kLeft.pin2, kLeft.ch2);
   pwmAttach(kRight.pin1, kRight.ch1);
   pwmAttach(kRight.pin2, kRight.ch2);
+  setMotor(kLeft, 0);   // pinos em LOW desde o boot (a rampa só escreve quando muda)
+  setMotor(kRight, 0);
   stop();
   Serial.println("[MOT] Motores prontos");
 }
@@ -124,6 +163,13 @@ void enforceTimeout() {
     applyLocked(Direction::Stop, 0);
     Serial.println("[MOT] Sem comandos -> parada de seguranca");
   }
+}
+
+void update() {
+  Guard g;
+  const uint32_t now = millis();
+  rampLocked(now - gLastRampMs);
+  gLastRampMs = now;
 }
 
 bool parseDirection(const char* text, Direction& out) {

@@ -115,3 +115,4 @@ boca               = true   # sorriso gravado na cara
 
 # --- Impressão ---------------------------------------------------------
 folga              = 0.3    # folga dos encaixes (aumente se ficar apertado)
+mesa_impressora    = 220    # lado da mesa da impressora (Ender 3 = 220; Bambu A1/P1 = 256)

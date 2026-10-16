@@ -86,5 +86,6 @@ void setup() {
 void loop() {
   ArduinoOTA.handle();
   motors::enforceTimeout();
+  motors::update();
   delay(10);
 }

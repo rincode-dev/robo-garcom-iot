@@ -11,6 +11,9 @@
 //   GET /auto/status, /auto/modo, /pedido/*  -> API planejada do modo autônomo
 //   O robô segue uma fita preta no chão (5 sensores de linha), conta as marcas
 //   (base, mesa 1, 2, 3), para na mesa do pedido e freia diante de obstáculos.
+//   Na mesa, gira 90° até o "ramal" de fita que aponta para ela, fala a mensagem
+//   (no robô real: DFPlayer + alto-falante) e espera o botão verde. Depois gira
+//   mais 90° no mesmo sentido, reencontra a linha e volta para o balcão.
 //
 // Os parâmetros de motor e o timeout de segurança são lidos de src/config.h,
 // então o comportamento acompanha o que você ajustar no firmware.
@@ -50,6 +53,7 @@ function loadConfig() {
     minDuty: num('MOTOR_MIN_DUTY', 90),
     turnFactor: num('TURN_SPEED_FACTOR', 0.75),
     curveFactor: num('CURVE_INNER_FACTOR', 0.45),
+    rampMs: num('MOTOR_RAMP_MS', 0),
   };
 }
 
@@ -100,6 +104,7 @@ const AUTO = {
   giroDuty: CFG.minDuty,
   giroPulsoS: 0.12, giroLigado: 0.5, // período do pulso e fração do tempo com o motor ligado
   giroMaxS: 4,                       // sem reencontrar a linha nesse tempo = perdido
+  falaRepeteS: 20,                   // na mesa, repete a mensagem se ninguém apertar o botão
 };
 
 // ---------------------------------------------------------------------------
@@ -111,6 +116,13 @@ const AUTO = {
 // um círculo de ~14,5 cm de raio em volta do eixo das rodas e não pode bater nela.
 const MESA_DIST = 28;
 const MESA_R = 9;
+// Ramal: traço de fita perpendicular à linha, do lado da mesa, alinhado com o EIXO das
+// rodas quando o robô está parado na marca (ou seja, SENSOR_FRENTE antes da marca).
+// Começa a 5 cm da linha (a barra, com ±2,4 cm, nunca o toca enquanto segue a fita)
+// e vai até 17 cm (antes da mesa). Girando no lugar, o sensor do meio descreve um
+// círculo de 13,5 cm de raio e cruza o ramal exatamente quando o robô está de frente
+// para a mesa: é a referência dos 90°, sem precisar medir ângulo.
+const RAMAL_INI = 5, RAMAL_FIM = 17;
 const POSTOS = [
   { nome: 'Base', x: LINHA.x0 + BLOCO / 2, lado: 0 },
   { nome: 'Mesa 1', x: 70, lado: -1 },
@@ -119,11 +131,14 @@ const POSTOS = [
 ].map(p => ({
   ...p,
   marca: p.lado ? { x: p.x + 8, comp: FITA } : { x: p.x, comp: BLOCO },
+  ramal: p.lado ? { x: p.x + 8 - SENSOR_FRENTE, y0: LINHA.y + p.lado * RAMAL_INI,
+                    y1: LINHA.y + p.lado * RAMAL_FIM } : null,
   mesa: p.lado ? { x: p.x, y: LINHA.y + p.lado * MESA_DIST } : { x: 8, y: LINHA.y },
 }));
 // Bloco de fim de linha: segurança, caso o robô passe da última mesa
 const FIM = { x: LINHA.x1 - BLOCO / 2, comp: BLOCO };
 const MARCAS = [...POSTOS.map(p => p.marca), FIM];
+const RAMAIS = POSTOS.filter(p => p.ramal).map(p => p.ramal);
 const OBSTACULO = { x: 95, y: LINHA.y, r: 6 }; // "pessoa" na linha, entre as mesas 1 e 2
 
 // Onde o robô fica no balcão: virado para as mesas, com os sensores já na linha
@@ -133,6 +148,8 @@ const POSE_BASE = { x: LINHA.x0 + BLOCO + SENSOR_FRENTE, y: LINHA.y, heading: 0 
 function naFita(x, y) {
   const dy = Math.abs(y - LINHA.y);
   if (dy < FITA / 2 && x >= LINHA.x0 && x <= LINHA.x1) return true;
+  if (RAMAIS.some(r => Math.abs(x - r.x) < FITA / 2
+                       && y >= Math.min(r.y0, r.y1) && y <= Math.max(r.y0, r.y1))) return true;
   // Marcas atravessadas na linha: 8 cm de largura
   return dy < 4 && MARCAS.some(m => Math.abs(x - m.x) < m.comp / 2);
 }
@@ -149,11 +166,12 @@ const robot = {
 
 const auto = {
   modo: 'manual',          // 'manual' | 'auto'
-  estado: 'manual',        // manual, na_base, indo, na_mesa, girando, voltando, obstaculo, perdido
+  estado: 'manual',        // manual, na_base, indo, girando, na_mesa, voltando, obstaculo, perdido
   posicao: 0, alvo: 0,     // índice em POSTOS (0 = base); POSTOS.length = bloco de fim
   naMarca: false, semLinha: 0, ultimoErro: 0, antesObst: null,
-  giro: null,              // meia-volta em andamento: { fase, t, depois }
+  giro: null,              // giro em andamento: { fase, t, depois, sentido, rotulo }
   pedidoAtual: null,
+  fala: { n: 0, texto: '' }, falaEm: 0, // última mensagem do alto-falante (n sobe a cada fala)
 };
 let obstaculoLigado = false;
 const pedidos = [];
@@ -203,6 +221,18 @@ function dutyToCmS(duty) {
   const volts = (Math.abs(duty) / 255) * BATTERY_V;
   return Math.sign(duty) * Math.min(volts / 6, 1.2) * MAX_WHEEL_CM_S;
 }
+
+// Partida suave (igual a rampToward() de motors.cpp): aumentar a força sobe no
+// máximo `passo`; partir do zero ou inverter começa no MOTOR_MIN_DUTY; reduzir e
+// parar são imediatos.
+function rampa(aplicado, alvo, passo) {
+  if (alvo === 0 || CFG.rampMs === 0) return alvo;
+  const sinal = Math.sign(alvo), quer = Math.abs(alvo);
+  if (aplicado === 0 || Math.sign(aplicado) !== sinal) return sinal * Math.min(quer, CFG.minDuty);
+  const agora = Math.abs(aplicado);
+  return quer <= agora ? alvo : sinal * Math.min(quer, agora + passo);
+}
+const motorAplicado = [0, 0];
 
 // No modo autônomo cada roda recebe um duty próprio. Abaixo de ~80% do
 // MOTOR_MIN_DUTY o motor TT não vence o atrito e a roda para.
@@ -264,13 +294,17 @@ function despachar() {
   log(`[AUTO] Pedido #${p.id} -> ${POSTOS[p.mesa].nome}`);
 }
 
-// Meia-volta no lugar. Não precisa medir o ângulo: a barra de sensores está 13,5 cm
-// à frente do eixo, então, girando em volta do eixo, ela sai da fita e só cai nela
-// de novo depois de 180°, apontando para o outro lado.
-function iniciarGiro(depois) {
+// Giro no lugar. Não precisa medir o ângulo: a barra de sensores está 13,5 cm à frente
+// do eixo, então, girando em volta do eixo, ela sai da fita e só para quando o sensor
+// do meio cai numa fita de novo:
+//   - no balcão / fim da linha: a própria linha, depois de 180° (meia-volta);
+//   - na mesa, ida: o ramal da mesa, depois de 90° (de frente para a mesa);
+//   - na mesa, volta: mais 90° no MESMO sentido, até a linha (virado para o balcão).
+// sentido: -1 = gira para o lado de y menor (mesas 1 e 3), +1 = para o de y maior.
+function iniciarGiro(depois, sentido, rotulo) {
   auto.estado = 'girando';
-  auto.giro = { fase: 'saindo', t: 0, depois };
-  log('[AUTO] Meia-volta (180 graus)');
+  auto.giro = { fase: 'saindo', t: 0, depois, sentido, rotulo };
+  log(`[AUTO] Girando: ${rotulo}`);
 }
 
 function passoGiro(s, n, dt) {
@@ -282,34 +316,46 @@ function passoGiro(s, n, dt) {
     auto.naMarca = n >= 4;
     auto.ultimoErro = 0;
     auto.semLinha = 0;
+    if (g.depois === 'na_mesa') { chegouNaMesa(); return [0, 0]; }
     auto.estado = g.depois;
     log(g.depois === 'na_base' ? '[AUTO] No balcao, virado para as mesas'
-                               : '[AUTO] Meia-volta completa: voltando para o balcao');
+                               : '[AUTO] Giro completo: voltando para o balcao');
     return [0, 0];
   }
   if (g.t > AUTO.giroMaxS) {
     auto.giro = null;
     auto.estado = 'perdido';
-    log('[AUTO] Meia-volta travou ou nao achou a linha (algo no caminho do giro?): parado');
+    log('[AUTO] Giro travou ou nao achou a fita (algo no caminho? ramal faltando?): parado');
     return [0, 0];
   }
   // O sensor de distância gira junto com o robô e "varre" o entorno: se aparecer algo
   // perto da frente, pausa o giro (sem contar o tempo) até liberar.
   if (robot.distancia < AUTO.paraCm) {
     g.t -= dt;
-    if (!g.pausado) { g.pausado = true; log('[AUTO] Algo perto durante a meia-volta: pausando'); }
+    if (!g.pausado) { g.pausado = true; log('[AUTO] Algo perto durante o giro: pausando'); }
     return [0, 0];
   }
-  if (g.pausado) { g.pausado = false; log('[AUTO] Livre: continuando a meia-volta'); }
+  if (g.pausado) { g.pausado = false; log('[AUTO] Livre: continuando o giro'); }
   const ligado = (g.t % AUTO.giroPulsoS) < AUTO.giroPulsoS * AUTO.giroLigado;
-  return ligado ? [-AUTO.giroDuty, AUTO.giroDuty] : [0, 0];
+  return ligado ? [g.sentido * AUTO.giroDuty, -g.sentido * AUTO.giroDuty] : [0, 0];
+}
+
+// Alto-falante. No robô real: a ESP32 DevKit manda o DFPlayer tocar o arquivo da mesa
+// (0001.mp3 = mesa 1...). Aqui: a página de pedidos lê o texto com a voz do navegador.
+function falar() {
+  const n = auto.posicao;
+  auto.fala = { n: auto.fala.n + 1,
+    texto: `Mesa ${n}, seu pedido chegou! Retire da bandeja e aperte o botão verde.` };
+  auto.falaEm = Date.now(); // relógio real: é o tempo que o cliente espera
+  log(`[VOZ] Tocando a mensagem da mesa ${n} (arquivo ${String(n).padStart(4, '0')}.mp3)`);
 }
 
 function chegouNaMesa() {
   auto.estado = 'na_mesa';
   const p = pedidos.find(o => o.id === auto.pedidoAtual);
   if (p) p.estado = 'na_mesa';
-  log(`[AUTO] Chegou na ${POSTOS[auto.posicao].nome}: aguardando "Entregue"`);
+  log(`[AUTO] De frente para a ${POSTOS[auto.posicao].nome}: aguardando o botao verde`);
+  falar();
 }
 
 function autoStep(dt) {
@@ -321,6 +367,10 @@ function autoStep(dt) {
 
   if (auto.estado === 'na_base') { despachar(); return [0, 0]; }
   if (auto.estado === 'girando') return passoGiro(s, n, dt);
+  if (auto.estado === 'na_mesa') {
+    if (Date.now() - auto.falaEm >= AUTO.falaRepeteS * 1000) falar(); // ninguém apertou: repete
+    return [0, 0];
+  }
 
   if (auto.estado === 'obstaculo') {
     if (robot.distancia > AUTO.liberaCm) { auto.estado = auto.antesObst; log('[AUTO] Caminho livre, continuando'); }
@@ -342,14 +392,18 @@ function autoStep(dt) {
     auto.naMarca = true;
     if (auto.estado === 'indo') {
       auto.posicao++;
-      if (auto.posicao === auto.alvo) { chegouNaMesa(); return [0, 0]; }
+      if (auto.posicao === auto.alvo) {
+        log(`[AUTO] Marca da ${POSTOS[auto.posicao].nome}`);
+        iniciarGiro('na_mesa', POSTOS[auto.posicao].lado, 'virando para a mesa (90 graus, ate o ramal)');
+        return [0, 0];
+      }
       if (auto.posicao >= POSTOS.length) {
         // Passou da última mesa sem achar a certa: o pedido volta para a fila
         const p = pedidos.find(o => o.id === auto.pedidoAtual);
         if (p) p.estado = 'pronto';
         auto.pedidoAtual = null;
         log('[AUTO] Fim da linha sem achar a mesa: voltando');
-        iniciarGiro('voltando');
+        iniciarGiro('voltando', -1, 'meia-volta (180 graus)');
         return [0, 0];
       }
     } else {
@@ -357,7 +411,7 @@ function autoStep(dt) {
       if (auto.posicao <= 0) {
         auto.posicao = 0;
         log('[AUTO] Chegou no balcao');
-        iniciarGiro('na_base');
+        iniciarGiro('na_base', -1, 'meia-volta (180 graus)');
         return [0, 0];
       }
     }
@@ -400,6 +454,10 @@ setInterval(() => {
   } else {
     [dl, dr] = autoStep(PHYSICS_DT);
   }
+  const passo = ((CFG.maxDuty - CFG.minDuty) * PHYSICS_DT * 1000) / Math.max(CFG.rampMs, 1);
+  motorAplicado[0] = rampa(motorAplicado[0], dl, passo);
+  motorAplicado[1] = rampa(motorAplicado[1], dr, passo);
+  [dl, dr] = motorAplicado;
   robot.duty = [dl, dr];
   const vl = dutyToCmS(dl), vr = dutyToCmS(dr);
   const v = (vl + vr) / 2;
@@ -488,6 +546,7 @@ const fundo = Buffer.alloc(W * H * 4);
   const preto = [25, 25, 28];
   fillRect(LINHA.x0 * PX, (LINHA.y - FITA / 2) * PX, (LINHA.x1 - LINHA.x0) * PX, FITA * PX, preto);
   for (const m of MARCAS) fillRotRect(m.x, LINHA.y, 0, m.comp, 8, preto);
+  for (const r of RAMAIS) fillRotRect(r.x, (r.y0 + r.y1) / 2, 0, FITA, Math.abs(r.y1 - r.y0), preto);
   // Base (balcão) e mesas
   const b = POSTOS[0].mesa;
   fillRect((b.x - 8) * PX, (b.y - 14) * PX, 16 * PX, 28 * PX, [176, 120, 60]);
@@ -611,7 +670,8 @@ function rotaAuto(url, res) {
 
   if (url.pathname === '/auto/status') {
     return json(res, {
-      modo: auto.modo, estado: auto.estado,
+      modo: auto.modo, estado: auto.estado, giro: auto.giro ? auto.giro.rotulo : null,
+      fala: auto.fala,
       posicao: POSTOS[auto.posicao].nome, alvo: POSTOS[auto.alvo].nome,
       sensores: robot.sensores, distancia_cm: robot.distancia > 500 ? null : Math.round(robot.distancia),
       obstaculo: obstaculoLigado,
@@ -668,7 +728,9 @@ function rotaAuto(url, res) {
     if (p) { p.estado = 'entregue'; log(`[PED] Pedido #${p.id} entregue`); }
     auto.pedidoAtual = null;
     auto.alvo = 0;
-    iniciarGiro('voltando');
+    // Continua girando no MESMO sentido de quando virou para a mesa: mais 90° e o
+    // sensor do meio cai na linha, já apontando para o balcão.
+    iniciarGiro('voltando', POSTOS[auto.posicao].lado, 'virando para o balcao (mais 90 graus, ate a linha)');
     return text(res, 200, 'voltando');
   }
 
@@ -742,7 +804,7 @@ http.createServer((req, res) => {
   console.log('');
   console.log('=== Robo Garcom IoT - SIMULADOR ===');
   console.log(`Parametros lidos de src/config.h: ${JSON.stringify(CFG)}`);
-  console.log(`Pista: linha reta de ${LINHA.x1 - LINHA.x0} cm, ${POSTOS.length - 1} mesas, meia-volta na mesa e no balcao`);
+  console.log(`Pista: linha reta de ${LINHA.x1 - LINHA.x0} cm, ${POSTOS.length - 1} mesas, giro de 90 graus para a mesa (ramal) e meia-volta no balcao`);
   console.log('');
   console.log(`  Controle manual:     http://localhost:${CONTROL_PORT}`);
   console.log(`  Pedidos (autonomo):  http://localhost:${CONTROL_PORT}/pedidos`);

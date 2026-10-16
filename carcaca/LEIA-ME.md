@@ -11,7 +11,9 @@ Modelo **paramétrico** em OpenSCAD: todas as medidas ficam em números que voc�
 | **`medidas.txt`** | **O painel de números.** Todas as medidas ficam aqui |
 | **`GERAR.bat`** | Dois cliques: lê `medidas.txt` e gera tudo de novo (~10 s) |
 | `step/*.step` | As 6 peças + `montagem.step` (robô inteiro) para o **Fusion 360** |
-| `stl/*.stl` | As 6 peças para o fatiador (Cura, Bambu Studio, PrusaSlicer) |
+| `stl/*.stl` | As 6 peças avulsas para o fatiador (Cura, Bambu Studio, PrusaSlicer) |
+| `impressao/` | **Bandejas prontas**: as peças já arrumadas na mesa da impressora (`.3mf` + `.stl`) |
+| `bandeja_3mf.py` | Arruma as peças nas bandejas e grava os `.3mf` (usado também pela maquete) |
 | `robo_garcom_carcaca.scad` | O mesmo modelo no OpenSCAD (o `GERAR.bat` copia as medidas para ele) |
 | `gerar.py` | O programa que desenha as peças (CadQuery, Python) |
 | `prototipo.py` | Monta o **protótipo demonstrativo** (robô completo, com eletrônica e fios) em `step/prototipo_completo.step` |
@@ -51,6 +53,25 @@ Modelo **paramétrico** em OpenSCAD: todas as medidas ficam em números que voc�
 
 Altura total montada: cerca de **224 mm**.
 Configuração sugerida: PLA, camada de 0,2 mm, 3 paredes, preenchimento de 15%, **sem suportes**.
+
+## Bandejas prontas para imprimir (pasta `impressao\`)
+
+Cada arquivo é **uma impressão**, com as peças já arrumadas numa mesa de **22 × 22 cm**, na ordem combinada:
+
+![Bandejas de impressão](impressao/bandejas.png)
+
+| Arquivo | O que imprime |
+|---|---|
+| `1_cabeca_e_tampa_TESTE` | Cabeça + tampa (**imprima primeiro**, como teste, depois de medir a placa) |
+| `2_saia` | A saia (depois de medir a base do kit) |
+| `3_bandeja_baixo_e_coluna` | Bandeja de baixo + coluna |
+| `4_bandeja_cima` | Bandeja de cima |
+
+- Abra o **`.3mf`** no fatiador: as peças chegam separadas e no lugar. O **`.stl`** de mesmo nome é a bandeja inteira num arquivo só (reserva).
+- O **`.step`** de mesmo nome tem as mesmas peças sólidas e posicionadas: abre no **Fusion 360**, no **Bambu Studio** e no **Orca Slicer**.
+- **`0_TODAS_AS_BANDEJAS_so_para_conferir.step`**: todas as bandejas lado a lado, sobre mesas cinza, só para conferir no Fusion (não imprimir).
+- Mesa maior? Mude `mesa_impressora` no `medidas.txt` e rode o `GERAR.bat`.
+- ⚠️ Enquanto houver medidas "MEDIR" no `medidas.txt`, estas bandejas são só para conferência: **não imprima a saia nem a cabeça antes de medir as peças reais**.
 
 ## Bandejas: retangulares ou redondas
 

@@ -97,6 +97,11 @@
 #define TURN_SPEED_FACTOR  0.75f   // giros mais suaves que as retas
 #define CURVE_INNER_FACTOR 0.45f   // curvas (W+D etc.): roda de dentro gira a 45% da de fora
 
+// Partida suave: a roda já parte no MOTOR_MIN_DUTY e sobe até o MOTOR_MAX_DUTY
+// em MOTOR_RAMP_MS (a arrancada brusca faz o robô alto "empinar" para trás).
+// Reduzir, parar ou inverter continua imediato. 0 = sem rampa.
+#define MOTOR_RAMP_MS      500
+
 // Segurança: se nenhum comando chegar nesse intervalo, os motores param.
 // O dashboard reenvia o comando a cada 200 ms enquanto o botão está pressionado.
 #define COMMAND_TIMEOUT_MS 600

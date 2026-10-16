@@ -23,6 +23,9 @@ void stop();
 // parar de enviar comandos (Wi-Fi caiu, aba fechada, etc.).
 void enforceTimeout();
 
+// Deve ser chamado no loop(): avança a partida suave (MOTOR_RAMP_MS).
+void update();
+
 // Converte "forward", "backward", "left", "right", "stop" e as curvas
 // "forward_left", "forward_right", "backward_left", "backward_right". Retorna false se inválido.
 bool parseDirection(const char* text, Direction& out);

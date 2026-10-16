@@ -1,0 +1,55 @@
+# =====================================================================
+# MEDIDAS DA MAQUETE (mesas, cadeiras e balcão para imprimir em 3D). mm.
+#
+#   1. Mude o número depois do "=". Pode usar vírgula ou ponto.
+#   2. Salve o arquivo (Ctrl+S).
+#   3. Dê dois cliques em GERAR.bat.
+#   4. Os arquivos novos aparecem em stl\ (impressora) e step\ (Fusion 360).
+#      step\maquete_completa.step = o salão inteiro montado, com o robô.
+#
+# Tudo depois de "#" é comentário e não conta.
+#
+# Proporção (escala ~1 : 4,6 do Bandejito, que tem ~27 cm):
+#   mesa real 75 cm de altura e tampo de 80 cm -> 15 cm e 18 cm
+#   cadeira real: assento a 45 cm, encosto até 90 cm -> 10 cm e ~19 cm
+#   balcão real: ~80 cm -> ~17 cm (na altura da bandeja de cima do robô)
+# =====================================================================
+
+# --- Mesa ---------------------------------------------------------------
+mesas              = 3       # quantos tampos numerados gerar (1, 2, 3...)
+mesa_formato       = "redonda"   # "redonda" ou "quadrada"
+mesa_diametro      = 180     # redonda: diâmetro do tampo / quadrada: lado
+mesa_altura        = 150     # do chão até o topo do tampo
+tampo_esp          = 4       # espessura do tampo
+tampo_raio_canto   = 12      # só para a quadrada: arredondado dos cantos
+numero_tamanho     = 60      # altura do número gravado no tampo (0 = sem número)
+numero_prof        = 0.8     # profundidade da gravação
+perna_d            = 24      # diâmetro da perna da mesa
+pe_d               = 110     # diâmetro do pé (base redonda no chão)
+pe_esp             = 6       # espessura do pé
+encaixe_prof       = 10      # quanto a perna entra no tampo e no pé
+folga              = 0.25    # folga dos encaixes (aumente se ficar apertado)
+
+# --- Cadeira (2 peças: assento com pernas + encosto) ---------------------
+cadeiras_por_mesa  = 2       # na maquete montada (0 = sem cadeiras)
+cadeira_largura    = 80      # assento, de lado a lado
+cadeira_assento_h  = 100     # do chão até o topo do assento
+assento_esp        = 3.5
+cadeira_perna      = 6       # perna quadrada (lado)
+encosto_h          = 90      # do assento até o topo do encosto
+encosto_esp        = 2.5     # espessura da placa do encosto
+encosto_vao        = true    # recorte no meio do encosto (gasta menos)
+
+# --- Balcão (oco e ripado, em módulos iguais) -----------------------------
+balcao_modulos     = 2       # quantos módulos lado a lado (imprima esse tanto)
+balcao_comprimento = 140     # comprimento de UM módulo (2 x 140 = 28 cm)
+balcao_profundidade = 90     # da frente até o fundo
+balcao_altura      = 170     # do chão até o topo
+balcao_parede      = 1.2     # parede fina (3 voltas de bico 0,4 mm)
+balcao_tampo_esp   = 1.6     # espessura do tampo (8 camadas de 0,2 mm)
+balcao_aba         = 5       # quanto o tampo passa da frente e dos lados
+ripa_largura       = 8       # ripas da frente e dos lados
+ripa_vao           = 5       # fresta entre as ripas (0 = parede lisa; maior = gasta menos)
+
+# --- Impressão ------------------------------------------------------------
+mesa_impressora    = 220     # lado da mesa da impressora (Ender 3 = 220; Bambu A1/P1 = 256)

@@ -51,6 +51,7 @@
   .ped button{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#2a3242;color:var(--txt);font-size:13px;cursor:pointer}
   .vazio{color:var(--mut);font-size:13px;text-align:center;padding:10px}
   .aviso{min-height:18px;font-size:13px;color:var(--warn);margin-top:8px}
+  .fala{display:none;margin-top:10px;padding:10px 12px;border-radius:10px;background:#1d3a2c;color:var(--ok);font-size:14px}
 </style>
 </head>
 <body>
@@ -68,6 +69,7 @@
       <div class="estado" id="estado">–</div>
       <div class="sub" id="detalhe">–</div>
       <div class="sens">Sensores de linha: <span id="sens"></span> <span id="dist" style="margin-left:auto"></span></div>
+      <div class="fala" id="fala"></div>
     </section>
 
     <section class="card">
@@ -77,7 +79,10 @@
         <button id="mAuto">🚚 Automático</button>
       </div>
       <div class="row">
-        <button class="b big" id="entregue" disabled>✅ Entregue</button>
+        <button class="b big" id="entregue" disabled>🟢 Botão verde: retirei o pedido</button>
+      </div>
+      <div class="row">
+        <button class="b" id="som">🔊 Voz do robô: ligada</button>
       </div>
       <div class="row">
         <button class="b" id="base">📍 Colocar na base</button>
@@ -85,6 +90,7 @@
       </div>
       <div class="aviso" id="aviso"></div>
       <p class="sub">"Colocar na base" e "Obstáculo" são ajudas do simulador. No robô real, você põe o robô na base com a mão, e o obstáculo é qualquer coisa (ou pessoa) na frente dele.</p>
+      <p class="sub">A voz aqui é a do navegador. No robô real, ela sai de um alto-falante (módulo DFPlayer), e o botão verde fica no próprio robô.</p>
     </section>
   </div>
 
@@ -116,8 +122,8 @@
     manual: ['🕹️ Controle manual', 'Use a página de controle manual, ou mude para Automático.'],
     na_base: ['🏠 No balcão', 'Esperando a cozinha marcar um pedido como pronto.'],
     indo: ['🚚 Indo para a {alvo}', 'Seguindo a linha e contando as marcas.'],
-    na_mesa: ['🍽️ Na {pos}', 'Retire o pedido da bandeja e toque em "Entregue".'],
-    girando: ['🔄 Meia-volta', 'Girando no lugar até reencontrar a linha.'],
+    na_mesa: ['🍽️ De frente para a {pos}', 'Retire o pedido da bandeja e aperte o botão verde.'],
+    girando: ['🔄 Girando no lugar', '{giro}'],
     voltando: ['↩️ Voltando para o balcão', 'Seguindo a linha de volta até a marca do balcão.'],
     obstaculo: ['🚧 Obstáculo à frente', 'Parado esperando o caminho ficar livre.'],
     perdido: ['❓ Perdeu a linha', 'Toque em "Colocar na base" e depois em Automático.'],
@@ -125,6 +131,23 @@
   const TAG = { novo: 'aguardando cozinha', pronto: 'pronto · na fila do robô', a_caminho: 'robô a caminho',
                 na_mesa: 'robô na mesa', entregue: 'entregue', cancelado: 'cancelado' };
   let mesaSel = 0, qtd = ITENS.map(() => 0), st = null, obstOn = false, ultimaLista = '';
+
+  // ---------- Voz (imita o alto-falante do robô) ----------
+  let somOn = true, ultimaFala = null;
+  function falar(texto) {
+    if (!somOn || !('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = 'pt-BR';
+    const voz = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('pt'));
+    if (voz) u.voice = voz;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
+  $('som').onclick = () => {
+    somOn = !somOn;
+    $('som').textContent = somOn ? '🔊 Voz do robô: ligada' : '🔇 Voz do robô: desligada';
+    if (!somOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+  };
 
   // ---------- Vídeo (porta do painel + 1) ----------
   const cam = $('cam'), camMsg = $('camMsg');
@@ -211,7 +234,12 @@
     } catch (e) { $('estado').textContent = '⚠️ Sem conexão com o robô'; return; }
     const [t, d] = ESTADOS[st.estado] || [st.estado, ''];
     $('estado').textContent = t.replace('{alvo}', st.alvo).replace('{pos}', st.posicao);
-    $('detalhe').textContent = d;
+    $('detalhe').textContent = d.replace('{giro}', st.giro || '');
+    // Mensagem nova do alto-falante (não fala as antigas ao abrir a página)
+    if (ultimaFala === null) ultimaFala = st.fala.n;
+    else if (st.fala.n !== ultimaFala) { ultimaFala = st.fala.n; falar(st.fala.texto); }
+    $('fala').style.display = st.estado === 'na_mesa' ? 'block' : 'none';
+    $('fala').textContent = `🔊 "${st.fala.texto}"`;
     $('mManual').classList.toggle('on', st.modo === 'manual');
     $('mAuto').classList.toggle('on', st.modo === 'auto');
     $('entregue').disabled = st.estado !== 'na_mesa';

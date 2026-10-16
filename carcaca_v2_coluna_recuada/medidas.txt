@@ -1,0 +1,141 @@
+# =====================================================================
+# MEDIDAS DA CARCAÇA (conceito B · Torre de Serviço). Unidades: mm.
+#
+# >>> VERSÃO 2: COLUNA RECUADA 50 mm (pasta carcaca_v2_coluna_recuada) <<<
+# A versão original continua intacta na pasta carcaca\ (e na marca do Git
+# "bandejito-1.0-original"). Diferenças em relação a ela: veja o LEIA-ME.md.
+#
+# Este é o "painel de números" da carcaça:
+#   1. Mude o número depois do "=". Pode usar vírgula ou ponto (40,5 ou 40.5).
+#   2. Salve o arquivo (Ctrl+S).
+#   3. Dê dois cliques em GERAR.bat.
+#   4. Os arquivos novos aparecem em step\ (Fusion 360) e stl\ (impressora).
+#
+# Tudo depois de "#" é comentário e não conta.
+# (MEDIR) = medida estimada; confira na peça real antes de imprimir.
+# =====================================================================
+
+# --- Chassi (base do kit 2WD: acrílico com papel protetor marrom) ------
+# Formato da foto do dono: corpo ESTREITO com a frente curva e traseira
+# LARGA em leque. As rodas ficam do lado de FORA do corpo estreito.
+# Visto de cima (frente = roda boba = câmera, em cima):
+#
+#              ╭────────╮   <- frente curva (frente_curva)
+#              │        │
+#              │ corpo  │   chassi_largura (10 cm)
+#            ( │        │ ) <- rodas, do lado de fora
+#              │        │
+#          ╱───┘        └───╲   <- começo do leque (traseira_inicio)
+#          ╲________________╱   <- traseira curva, chassi_largura_traseira (15 cm)
+#
+# Medidas da foto (cota do anúncio); o resto foi estimado pela foto (MEDIR).
+chassi_largura          = 100    # corpo estreito, de lado a lado (da foto: 10 cm)
+chassi_largura_traseira = 150    # leque de trás, de ponta a ponta (da foto: 15 cm)
+chassi_comprimento      = 212    # da frente até o meio da traseira (da foto: 21,2 cm)
+frente_curva            = 6      # quanto o meio da frente passa dos cantos (MEDIR)
+traseira_inicio         = 33     # onde o leque começa, medido da borda de trás (MEDIR)
+traseira_ponta          = 14     # das pontas do leque até a borda de trás (MEDIR)
+# Furos onde a saia é parafusada (a base tem muitos furos; se nenhum coincidir,
+# dá para furar com broca de 3 mm, devagar: acrílico racha). Pares esquerda/direita.
+furo_frente_x      = 38     # par da frente: distância do centro até cada furo (MEDIR)
+furo_frente_y      = 88     # par da frente: + = para a frente do centro (MEDIR)
+furo_tras_x        = 56     # par de trás, já dentro do leque (MEDIR)
+furo_tras_y        = -88    # par de trás: - = para trás do centro (MEDIR)
+furo_parafuso      = 2.8    # furo para o M3 rosquear direto no plástico
+
+# --- Rodas -------------------------------------------------------------
+roda_diametro      = 65
+roda_largura       = 27
+roda_pos_x         = 65     # centro da roda até o meio do robô, de lado (MEDIR; 2ª foto: roda quase encostada no corpo)
+roda_pos_y         = -29    # eixo das rodas: + = frente, - = trás (MEDIR; as fotos dão 12,3 a 13,5 cm da frente)
+roda_eixo_z        = -12    # altura do eixo vs. topo da base; negativo = abaixo (MEDIR)
+roda_folga         = 3      # espaço livre em volta da roda
+
+# --- Apoio antitombo (v2): pezinho embaixo da traseira da base ------------
+# Se o robô empinar numa arrancada, a ponta redonda encosta no chão e segura.
+antitombo          = true   # false = sem o pezinho
+antitombo_folga    = 6      # distância da ponta até o chão com o robô parado
+antitombo_pos_y    = -95    # posição: - = trás (atrás das rodas)
+antitombo_largura  = 60     # de lado a lado
+antitombo_furos_x  = 22     # 2 parafusos M3 de cima para baixo, pela base (MEDIR: furos da base)
+
+# --- Saia (base) -------------------------------------------------------
+# A saia segue o contorno do chassi e cobre só o corpo; as rodas ficam de fora.
+saia_altura        = 55
+saia_recuo         = 2      # a saia fica esse tanto para dentro da borda da base (o pneu não raspa)
+saia_raio_canto    = 4      # arredondado dos cantos do contorno
+parede             = 2      # espessura das paredes
+saia_teto          = 2.5
+abertura_traseira  = true   # abertura atrás (v2: acesso ao regulador LM2596, ao display e ao trimpot)
+abertura_traseira_largura = 70
+abertura_traseira_altura  = 45
+# v2: as pilhas ficam na FRENTE (centro de massa mais para a frente): saem por esta abertura lateral
+abertura_lateral   = true
+abertura_lateral_lado    = -1     # -1 = lado esquerdo, 1 = lado direito (olhando o robô por trás)
+abertura_lateral_pos_y   = 56     # centro da abertura (= meio do suporte das pilhas)
+abertura_lateral_largura = 62
+abertura_lateral_altura  = 45
+# v2: portinhas de encaixe que fecham a abertura de trás e a lateral (aba em cima + "clique" embaixo)
+portinhas          = true
+portinha_folga     = 0.25   # folga em volta (aumente se ficar dura; diminua se ficar solta)
+furo_chave        = true   # furo no teto em cima da chave liga/desliga
+chave_pos_x        = 23     # + = direita (MEDIR; a chave fica na lateral do suporte das pilhas)
+chave_pos_y        = 48     # + = frente (MEDIR; v2: suporte das pilhas na frente, em y = 58)
+chave_largura      = 14
+chave_comprimento  = 22
+nome               = "Bandejito 1.0"   # nome gravado na frente ("" = sem nome)
+nome_tamanho       = 10     # a frente agora tem 10 cm: o nome precisa caber nela
+coluna_pos_y       = -50    # posição da coluna: + = frente, - = trás (v2: era 0)
+bandeja_pos_y      = 0      # centro das bandejas no chassi (v2: ficam onde estavam; o furo vai para trás)
+apoio_espessura    = 4      # v2: espessura das "espinhas" de apoio embaixo das bandejas
+
+# --- Coluna ------------------------------------------------------------
+coluna_d1          = 36     # trecho de baixo (entra na saia, segura a bandeja de baixo)
+coluna_h1          = 42
+coluna_d2          = 32     # trecho do meio (segura a bandeja de cima)
+coluna_h2          = 45
+coluna_d3          = 28     # trecho de cima (entra na cabeça)
+coluna_h3          = 38
+canal_fios         = 18     # canal oco para os 6 fios
+encaixe_prof       = 12     # profundidade dos encaixes
+encaixe_corte      = 2      # lado reto do encaixe (não deixa girar)
+
+# --- Bandejas ----------------------------------------------------------
+bandeja_formato    = "retangular"   # "retangular" (cantos arredondados) ou "redonda"
+# Retangulares: proporção 1 : 1,4. Ficam mais largas que o corpo (10 cm),
+# como a bandeja de um garçom; a de baixo não passa das rodas (~16 cm).
+bandeja_baixo_largura     = 136   # de lado a lado
+bandeja_baixo_comprimento = 190   # da frente para trás
+bandeja_cima_largura      = 104   # menor que a de baixo: sobra uma faixa livre em volta
+bandeja_cima_comprimento  = 146
+bandeja_raio_canto = 16
+# Redondas (só valem com bandeja_formato = "redonda")
+bandeja_baixo_d    = 130
+bandeja_cima_d     = 100
+bandeja_esp        = 3
+bandeja_borda      = 6      # altura da borda
+bandeja_colar      = 8      # altura do colar em volta do furo
+
+# --- Cabeça e ESP32-CAM ------------------------------------------------
+cab_largura        = 52
+cab_profundidade   = 48
+cab_altura         = 68
+inclinacao         = 10     # quanto a câmera olha para baixo (graus; v2: era 15, para a borda da bandeja de cima não aparecer no vídeo)
+placa_largura      = 27     # ESP32-CAM (do anúncio)
+placa_altura       = 40.5   # ESP32-CAM (do anúncio)
+placa_esp          = 1.6
+lente_altura       = 6      # da frente da placa até a frente da lente (MEDIR)
+lente_x            = 0      # lente: lado (0 = centro) (MEDIR)
+lente_do_topo      = 12     # lente: distância da borda de cima da placa (MEDIR)
+lente_janela       = 10
+campo_visao        = 80     # ângulo de visão da câmera; a janela abre em cone
+olho_z             = 46     # altura do "olho" (lente) na cara
+flash_x            = -10    # LED de flash: lado (MEDIR)
+flash_do_topo      = 33     # LED de flash: distância da borda de cima da placa (MEDIR)
+flash_janela_largura = 7
+flash_janela_altura  = 11
+boca               = true   # sorriso gravado na cara
+
+# --- Impressão ---------------------------------------------------------
+folga              = 0.3    # folga dos encaixes (aumente se ficar apertado)
+mesa_impressora    = 220    # lado da mesa da impressora (Ender 3 = 220; Bambu A1/P1 = 256)

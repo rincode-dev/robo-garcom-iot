@@ -376,6 +376,7 @@ def main():
     print(f"[CARCACA] {len(M)} medidas lidas de medidas.txt")
     montagem = cq.Assembly(name="robo_garcom")
     erros = 0
+    impressas = {}
     for nome_peca, (func, impressao, montada) in PECAS.items():
         print(f"[CARCACA] gerando {nome_peca}...", flush=True)
         obj = func()
@@ -385,6 +386,7 @@ def main():
             erros += 1
             print(f"[ERRO] {nome_peca}: {len(solidos)} solido(s), valido={solidos[0].isValid() if solidos else False}")
         p = impressao(obj)
+        impressas[nome_peca] = p
         cq.exporters.export(p, str(PASTA / "step" / f"{nome_peca}.step"))
         cq.exporters.export(p, str(PASTA / "stl" / f"{nome_peca}.stl"), tolerance=0.02, angularTolerance=0.1)
         bb = p.val().BoundingBox()
@@ -393,9 +395,22 @@ def main():
     montagem.save(str(PASTA / "step" / "montagem.step"))
     sincronizar_scad(M, PASTA / "robo_garcom_carcaca.scad")
     print("[CARCACA] OpenSCAD atualizado com as mesmas medidas")
+
+    # Bandejas de impressao (ordem combinada: cabeca primeiro, como teste)
+    import bandeja_3mf
+    print(f"[CARCACA] bandejas de impressao (mesa de {mesa_impressora:.0f} mm) em impressao\\:")
+    p = impressas
+    erros += bandeja_3mf.montar(PASTA / "impressao", [
+        ("1_cabeca_e_tampa_TESTE", [("cabeca", p["cabeca"], 60, 110, 0),
+                                    ("cabeca_tampa", p["cabeca_tampa"], 150, 110, 0)]),
+        ("2_saia", [("saia", p["saia"], 110, 110, 0)]),
+        ("3_bandeja_baixo_e_coluna", [("bandeja_baixo", p["bandeja_baixo"], 80, 110, 0),
+                                      ("coluna", p["coluna"], 185, 110, 0)]),
+        ("4_bandeja_cima", [("bandeja_cima", p["bandeja_cima"], 110, 110, 0)]),
+    ], mesa_impressora)
     if erros:
-        sys.exit(f"[ERRO] {erros} peca(s) com problema. Confira as medidas.")
-    print("[CARCACA] pronto: step\\ (Fusion 360) e stl\\ (impressora)")
+        sys.exit(f"[ERRO] {erros} peca(s) ou bandeja(s) com problema. Confira as medidas.")
+    print("[CARCACA] pronto: step\\ (Fusion 360), stl\\ (pecas avulsas) e impressao\\ (bandejas prontas)")
 
 
 if __name__ == "__main__":

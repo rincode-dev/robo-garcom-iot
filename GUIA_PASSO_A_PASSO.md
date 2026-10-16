@@ -16,6 +16,7 @@ Os outros documentos são **consulta** e este guia indica quando abrir cada um:
 |---|---|
 | `lista_compras_detalhada.md` | Especificação técnica e preço de cada peça |
 | `manual_montagem_fisica.md` | Instruções detalhadas de montagem e fiação |
+| `CLAUDE.md` | Referência técnica: comandos, pinos, API |
 
 ---
 
@@ -33,7 +34,7 @@ Estas ferramentas já foram instaladas no seu computador:
 | **VS Code** | Editor onde você vai ler e editar o código | Menu Iniciar → "Visual Studio Code" |
 | **Extensão PlatformIO** | Compila o código e envia para a placa ESP32 | Ícone de formiga 🐜 na barra lateral do VS Code |
 | **Python 3.12** | O PlatformIO precisa dele por baixo dos panos | Você não vai mexer nele |
-| **Compilador ESP32** | Transforma o C++ em programa para o chip | Baixado pelo PlatformIO em `C:\Users\pisto\.platformio` |
+| **Compilador ESP32** | Transforma o C++ em programa para o chip | Baixado pelo PlatformIO em `%USERPROFILE%\.platformio` (ex.: `C:\Users\<seu usuário>\.platformio`) |
 | **Node.js** (você já tinha) | Roda o simulador | — |
 
 O firmware já foi **compilado com sucesso** uma vez:
@@ -48,7 +49,7 @@ Ou seja, o código não tem erros e cabe com folga na placa.
 
 1. Abra o **Visual Studio Code** pelo Menu Iniciar.
 2. Na primeira abertura, a extensão PlatformIO termina de se configurar sozinha. Aparece "PlatformIO: Installing..." no canto inferior direito. **Espere** até sumir (2 a 5 minutos). Se ele pedir para recarregar a janela (*Reload Now*), clique em sim.
-3. Menu **File → Open Folder...** → navegue até `C:\Users\pisto\Projects\robo-garcom-iot` → **Selecionar pasta**.
+3. Menu **File → Open Folder...** → navegue até a pasta do projeto (ex.: `C:\Users\<seu usuário>\Projects\robo-garcom-iot`) → **Selecionar pasta**.
 4. Se aparecer "Do you trust the authors of the files in this folder?", clique em **Yes, I trust the authors**.
 5. No painel da esquerda (Explorer) você verá as pastas `src/`, `simulador/` e os arquivos `.md`.
 
@@ -113,12 +114,14 @@ Leia com calma, nesta ordem. Os comentários no código estão em português.
 | 6 | `src/dashboard_html.h` | A página web (HTML + CSS + JavaScript) que você vê no navegador |
 | 7 | `simulador/server.js` | O "robô de mentira" em JavaScript, que imita tudo acima |
 
+> 💡 Ficou com dúvida em algum trecho? Abra o Claude Code na pasta do projeto e pergunte, por exemplo: *"explique a função applyLocked em motors.cpp linha por linha"*.
+
 ## Passo 1.6: Versionamento com Git ✅ (já feito)
 
 O projeto já é um repositório Git com o primeiro commit. Para publicar no **GitHub** (recomendado para portfólio):
 1. Crie uma conta em https://github.com, se ainda não tiver.
 2. Clique em **New repository** → nome `robo-garcom-iot` → **Public** → *não* marque "Add README" → **Create**.
-3. Siga os comandos que o GitHub mostra na tela ("…or push an existing repository").
+3. Peça ao Claude Code: *"publique o projeto robo-garcom-iot no meu GitHub"*, ou siga os comandos que o GitHub mostra na tela ("…or push an existing repository").
 
 ## ✅ Checkpoint da Fase 1
 
@@ -282,26 +285,80 @@ Veja a **Etapa 14** do manual. Resumo:
 
 > **Só comece depois do Checkpoint da Fase 3** (robô funcionando no modo manual pelo celular). Nada desta fase muda a montagem da Fase 3: ela só **acrescenta** peças.
 
-**Objetivo (nível 3, escolhido pelo dono em 2026-10-14):** pela página no celular, alguém faz o pedido para uma mesa. O robô sai do balcão (base) seguindo uma **fita preta no chão**, para na mesa certa, espera alguém confirmar a entrega, **dá meia-volta** e volta para o balcão pela mesma linha. O modo manual pelo celular continua existindo.
+**Objetivo (nível 3, escolhido pelo dono em 2026-10-14):** pela página no celular, alguém faz o pedido para uma mesa. O robô sai do balcão (base) seguindo uma **fita preta no chão**, para na mesa certa, **vira de frente para ela**, **avisa pelo alto-falante** e espera o cliente apertar o **botão verde**. Depois vira para o balcão e volta pela mesma linha. O modo manual pelo celular continua existindo.
 
 ### Decisões já tomadas
 - **Segundo cérebro:** uma **ESP32 DevKit** cuida dos motores e dos sensores. A ESP32-CAM fica só com o vídeo, o Wi-Fi e a página de pedidos. Motivo: a ESP32-CAM não tem pinos livres para sensores. As duas placas conversam por 2 fios (serial).
-- **Uma linha reta + meia-volta** (decisão do dono em 2026-10-14; antes era um circuito fechado). Na ida, o robô conta as marcas (1, 2, 3) e para na marca da mesa pedida. Depois do "Entregue", ele **gira 180° no lugar** e volta contando as marcas para baixo até o balcão, onde gira de novo e fica virado para as mesas.
+- **Uma linha reta + meia-volta** (decisão do dono em 2026-10-14; antes era um circuito fechado). Na ida, o robô conta as marcas (1, 2, 3) e para na marca da mesa pedida. Na volta, conta as marcas para baixo até o balcão, onde gira 180° e fica virado para as mesas.
   - **Como ele sabe que deu meia-volta, sem medir o ângulo:** os sensores ficam 13,5 cm à frente do eixo das rodas. Girando em volta do eixo, eles saem da fita e só caem nela de novo depois de 180°, apontando para o outro lado.
+- **Virar de frente para a mesa + voz** (decisão do dono em 2026-10-16; testado no simulador). Na mesa, a meia-volta foi dividida em **dois giros de 90° no mesmo sentido**, cada um terminando numa fita:
+  1. Na marca da mesa, o robô gira **para o lado da mesa** até o sensor do meio achar o **ramal**: um traço curto de fita que sai da linha em direção à mesa. Pronto: ele está de frente para ela.
+  2. O **alto-falante** toca a mensagem da mesa ("Mesa 2, seu pedido chegou! Retire da bandeja e aperte o botão verde."). Se ninguém apertar, repete a cada 20 s.
+  3. Com o **botão verde** apertado, ele continua girando **no mesmo sentido** por mais 90°, até o sensor do meio achar a **linha**. Agora ele está virado para o balcão e volta normalmente.
+  - **Por que o ramal fica 13,5 cm ANTES da marca:** o robô para quando a **barra de sensores** chega na marca, e nessa hora o **eixo das rodas** (o ponto em volta do qual ele gira) está 13,5 cm para trás. O ramal precisa sair exatamente dali.
+  - **Por que o ramal começa a 5 cm da linha, e não colado nela:** enquanto segue a fita, os sensores das pontas da barra ficam a até ~2,5 cm da linha. Com o espaço de 5 cm, eles nunca veem o ramal e o robô não se confunde (nem entorta, nem conta uma marca a mais).
+  - **Por que funciona sem medir ângulo:** girando no lugar, o sensor do meio desenha um círculo de 13,5 cm de raio. Ele só cruza o ramal (que vai de 5 a 17 cm da linha) quando o robô está apontando para a mesa.
+  - **Peças a mais:** DFPlayer Mini + alto-falante + botão verde, todos ligados na ESP32 DevKit (veja "Ligações do alto-falante e do botão", abaixo).
   - **Giro suave:** em pulsos (liga/desliga os motores rapidinho), porque a menor velocidade dos motores ainda é rápida e poderia derrubar o que está na bandeja.
   - **Espaço para girar:** o giro "varre" um círculo de ~29 cm de diâmetro em volta do eixo das rodas (a ponta da frente fica a ~14,5 cm do eixo, com a base do kit das fotos). **Mesas, cadeiras e pés de pessoas precisam ficar a pelo menos ~15 cm da fita.**
   - **Pontas da linha:** um bloco de fita (4 × 8 cm) no balcão e outro no fim da linha. Se a fita simplesmente acabasse, o robô acharia que se perdeu.
   - **Onde vai a barra de sensores:** o rodízio do kit (roda boba giratória) fica no meio da frente, embaixo da base, justamente onde a barra de 5 sensores ficaria. A barra vai precisar de um suporte que a deixe **na frente do rodízio** (saindo um pouco da base), a 5–10 mm do chão. Resolver no Passo 5.4, com a base em mãos.
 
 ```
-                [MESA 1]                [MESA 3]
-                   │                       │
- [BALCÃO] ■━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━■ fim
-                                  │
-                               [MESA 2]
+                [MESA 1]                     [MESA 3]
+                   ┃                            ┃
+                   ┃ ramal                      ┃ ramal
+
+ [BALCÃO] ■━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━■ fim
+                   ↑ 13,5 ↑         ┃ ramal     ↑ 13,5 ↑
+                  eixo   marca      ┃          eixo   marca
+                                 [MESA 2]
 
  ■ = bloco de ponta (4 × 8 cm)   ┿ = marca da mesa (fita atravessada, 8 cm)
+ ┃ = ramal (fita de 12 cm, de 5 a 17 cm da linha, 13,5 cm ANTES da marca, do lado da mesa)
 ```
+
+### Como montar a maquete (o "salão" em miniatura)
+
+As medidas são as mesmas do simulador: o robô de verdade encontra a mesma pista que já foi testada no PC.
+
+![Maquete vista de cima, com as medidas](docs/imagens/maquete_cima.png)
+
+![Maquete vista em ângulo](docs/imagens/maquete_angulo.png)
+
+1. **Tapete:** forre uma área de **2 m × 1,5 m** com EVA ou cartolina **clara** (o contraste com a fita preta é o que os sensores enxergam). Prenda as emendas por baixo, para não ficar degrau.
+2. **Linha:** a 20 cm da borda esquerda e a **70 cm da borda de baixo**, cole uma tira reta de **fita isolante preta fosca de 164 cm**. Dica: estique um barbante ou use uma régua comprida como guia, e cole a fita esticada, sem bolhas.
+3. **Blocos das pontas:** em cada ponta da linha, cole um bloco de **4 × 8 cm** (dois pedaços de fita lado a lado, atravessados). O da esquerda é o **balcão**; o da direita é o **fim da linha** (segurança).
+4. **Marcas das mesas:** um pedaço de fita de **8 cm atravessado** na linha (forma uma cruz), medindo a partir do bloco do balcão: **54 cm** (mesa 1), mais **45 cm** (mesa 2), mais **45 cm** (mesa 3). Sobram 12 cm até o bloco de fim.
+5. **Ramais (para o robô virar de frente para a mesa):** para cada mesa, um pedaço de fita de **12 cm**, **em pé** (perpendicular à linha), **do lado da mesa**:
+   - **onde:** **13,5 cm antes** da marca da mesa (do lado do balcão);
+   - **começo:** a **5 cm** da linha (deixe esse espaço vazio, sem fita); **fim:** a **17 cm** da linha;
+   - mesas 1 e 3: o ramal vai para o lado delas; mesa 2: para o outro lado;
+   - **⚠️ confira com o robô montado:** os 13,5 cm são a distância entre a **barra de sensores** e o **eixo das rodas**. Meça no seu robô e use a sua medida. Alguns milímetros a mais ou a menos não atrapalham: o robô só fica um pouquinho de lado para a mesa.
+6. **Balcão:** encostado na ponta esquerda, com ~28 cm de comprimento e ~17 cm de altura. Dá para **imprimir em 3D** (2 módulos ripados e econômicos, pasta `maquete/`) ou usar uma caixa.
+7. **Mesas:** **15 cm de altura e ~18 cm de tampo** (na proporção do robô: o tampo fica entre as duas bandejas). Dá para **imprimir em 3D** (pasta `maquete/`, veja o `LEIA-ME.md` de lá) ou usar qualquer objeto parecido (pote, lata, caixa). Se tiver **cadeiras** (também na pasta `maquete/`), coloque 2 por mesa, **do lado oposto à fita**. O **meio** de cada mesa fica a **28 cm da linha** e **8 cm antes** da marca dela. Mesas 1 e 3 de um lado, mesa 2 do outro.
+8. **Faixa livre:** deixe **15 cm livres de cada lado da fita** (sem pés de mesa, cadeiras ou objetos), porque o robô gira no lugar no balcão e nas mesas. Os ramais ficam dentro dessa faixa, e tudo bem: são só fita no chão.
+9. **Robô:** coloque-o no balcão, **virado para as mesas**, com a barra de sensores em cima da fita, logo depois do bloco.
+
+> Testando no simulador antes? A página http://localhost:8080/pedidos mostra exatamente esta pista vista de cima, com os ramais. As imagens `maquete_cima.png` e `maquete_angulo.png` acima ainda são de **antes** dos ramais; o `maquete/step/maquete_completa.step` já tem os ramais.
+
+### Ligações do alto-falante e do botão (planejado; tudo na ESP32 DevKit)
+
+A ESP32-CAM não tem pinos livres, então tudo vai na **ESP32 DevKit** (o "segundo cérebro"). É ela que sabe quando o robô chegou na mesa.
+
+| Peça | Pino da peça | Liga em | Observação |
+|---|---|---|---|
+| **DFPlayer Mini** | VCC | 5 V (saída do LM2596) | Não use o 3V3: o som fica fraco e falha |
+| | GND | GND comum | |
+| | RX | DevKit **GPIO17** (TX2), **com um resistor de 1 kΩ no meio** | O resistor evita chiado e protege o módulo |
+| | TX | DevKit **GPIO16** (RX2) | |
+| | SPK_1 / SPK_2 | os 2 fios do **alto-falante** (8 Ω, 0,5 a 3 W, 28 a 40 mm) | O amplificador já vem no módulo. **Não** ligue o alto-falante no GND |
+| **Botão verde** (push button 12 mm de painel; o arcade de 30 mm é grande demais para a cabeça) | um terminal | DevKit **GPIO27** | O código liga o resistor interno (`INPUT_PULLUP`): solto = 1, apertado = 0 |
+| | outro terminal | GND | |
+
+- **Cartão microSD do DFPlayer** (até 32 GB, FAT32): crie uma pasta `mp3` e, dentro dela, um arquivo por mesa: `0001.mp3` = "Mesa 1, seu pedido chegou! Retire da bandeja e aperte o botão verde.", `0002.mp3` = mesa 2, `0003.mp3` = mesa 3. Dá para gravar com a sua voz pelo celular ou gerar com uma voz do Windows (o Claude pode gerar os arquivos).
+- **Os pinos 16, 17 e 27 são uma sugestão**, porque estão livres na DevKit e não atrapalham o boot. A tabela definitiva vai para o `config.h` no Passo 5.2, junto com a dos sensores.
+- **Onde montar:** alto-falante virado para a frente, na saia ou na cabeça (precisa de furinhos na carcaça); botão verde em cima, num lugar fácil para o cliente apertar. A carcaça ainda **não** tem esses furos.
 
 ### Degraus (cada um funciona sozinho)
 
@@ -311,8 +368,8 @@ Veja a **Etapa 14** do manual. Resumo:
 | 5.2 | Ligar a ESP32 DevKit e passar os motores para ela | ESP32 DevKit | ⭐⭐ |
 | 5.3 | **Freio automático:** parar se algo aparecer na frente (vale também no modo manual) | VL53L0X + janelinha na frente da saia | ⭐ |
 | 5.4 | **Seguir a linha** (linha reta de fita isolante) | Barra de 5 sensores TCRT5000 + fita | ⭐⭐⭐ |
-| 5.5 | **Parar na marca N**, dar meia-volta e voltar para o balcão | Marcas na fita (ou sensor de cor) | ⭐⭐⭐ |
-| 5.6 | **Pedidos pelo celular** + botão "Entregue" | Botão (opcional) | ⭐⭐ |
+| 5.5 | **Parar na marca N**, **virar de frente para a mesa** (ramal), depois virar para o balcão e voltar | Marcas e ramais na fita | ⭐⭐⭐ |
+| 5.6 | **Pedidos pelo celular** + **botão verde** no robô + **mensagem no alto-falante** | DFPlayer Mini + alto-falante + botão | ⭐⭐ |
 
 Tempo estimado: **~4 a 5 fins de semana**, contando a partir do robô manual pronto. O mais trabalhoso é ajustar o 5.4 (testes com o robô no chão).
 
@@ -337,8 +394,8 @@ Na tela, os 5 pontinhos na frente do robô são os sensores de linha: ficam **ve
 - [ ] Bandejito virtual atendendo pedidos no simulador (5.1)
 - [ ] Robô para sozinho diante de um obstáculo (5.3)
 - [ ] Robô vai e volta pela linha sem sair dela (5.4)
-- [ ] Robô para na mesa pedida, dá meia-volta e volta para o balcão (5.5)
-- [ ] Pedido feito pelo celular, entregue e confirmado (5.6)
+- [ ] Robô para na mesa pedida, vira de frente para ela, depois vira para o balcão e volta (5.5)
+- [ ] Pedido feito pelo celular; o robô fala a mensagem e volta quando o botão verde é apertado (5.6)
 
 ---
 
