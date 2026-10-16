@@ -18,8 +18,8 @@ Protótipo em miniatura de um robô garçom controlado pelo navegador, com **ví
 </p>
 
 <p align="center">
-  <img src="docs/imagens/bandejito_maquete_3d.gif" alt="Animação 3D na maquete: o Bandejito leva um copo à Mesa 2, espera uma pessoa sair do caminho, entrega, dá meia-volta e volta ao balcão" width="600"><br>
-  <em>O Bandejito na maquete impressa em 3D: leva o pedido à Mesa 2, freia e espera uma pessoa sair do caminho, entrega e volta ao balcão.</em>
+  <img src="docs/imagens/bandejito_maquete_3d.gif" alt="Animação 3D na maquete: o Bandejito leva o pedido à Mesa 2, espera uma pessoa sair do caminho, gira 90° até ficar de frente para a mesa, o cliente pega o copo e aperta o botão verde, e ele volta ao balcão" width="600"><br>
+  <em>O Bandejito na maquete impressa em 3D: leva o pedido à Mesa 2, freia e espera uma pessoa sair do caminho, gira 90° até ficar de frente para a mesa, espera o botão verde e volta ao balcão.</em>
 </p>
 
 ## O que ele faz
