@@ -83,7 +83,7 @@ COR_PECA = cq.Color(0.79, 0.44, 0.23)
 COR_MESA = cq.Color(0.6, 0.6, 0.6)
 
 
-def bandeja_step(pecas, nome="bandeja", com_mesa=None):
+def bandeja_step(pecas, nome="bandeja_de_impressao", com_mesa=None):
     """Montagem STEP com uma peca por componente. com_mesa = lado da mesa (so para conferir)."""
     a = cq.Assembly(name=nome)
     if com_mesa:

@@ -12,7 +12,7 @@
 # Proporção (escala ~1 : 4,6 do Bandejito, que tem ~27 cm):
 #   mesa real 75 cm de altura e tampo de 80 cm -> 15 cm e 18 cm
 #   cadeira real: assento a 45 cm, encosto até 90 cm -> 10 cm e ~19 cm
-#   balcão real: ~80 cm -> ~17 cm (na altura da bandeja de cima do robô)
+#   balcão real: ~80 cm -> ~17 cm (um pouco acima da bandeja do robô)
 # =====================================================================
 
 # --- Mesa ---------------------------------------------------------------

@@ -1,8 +1,11 @@
 """Gera a carcaca (conceito B) a partir de medidas.txt.
 
-Coluna recuada (coluna_pos_y) com as bandejas no lugar (bandeja_pos_y) e duas
-"espinhas" de apoio embaixo delas; pe antitombo e portinhas de encaixe.
-A primeira versao (coluna no centro) fica na marca Git bandejito-1.0-original.
+Uma bandeja grande em cima de uma balanca: a celula de carga fica presa na
+"base da balanca" (anel na coluna) e segura a "aranha" (suporte em X), que
+segura a bandeja. A bandeja nao encosta em mais nada. O botao verde fica no
+"nariz" da aranha, com o "capo" escondendo o corpo dele e os fios.
+Coluna recuada (coluna_pos_y), pe antitombo e portinhas de encaixe.
+A versao de 2 bandejas fica na marca Git bandejito-2-bandejas.
 
 Saidas:
   step/<peca>.step   -> para abrir no Fusion 360 (solidos de verdade)
@@ -71,8 +74,6 @@ def sincronizar_scad(m, caminho):
 
 M = ler_medidas(PASTA / "medidas.txt")
 globals().update(M)
-if bandeja_formato not in ("retangular", "redonda"):
-    sys.exit(f'[ERRO] medidas.txt: bandeja_formato = "{bandeja_formato}"; use "retangular" ou "redonda"')
 
 W, L, H = chassi_largura, chassi_comprimento, saia_altura
 coluna_altura = coluna_h1 + coluna_h2 + coluna_h3
@@ -209,6 +210,7 @@ def saia():
         y0 = abertura_lateral_pos_y - abertura_lateral_largura / 2
         cortes.append(caixa(xp - 2 * parede, xp + 2 * parede, y0, y0 + abertura_lateral_largura,
                             -1, abertura_lateral_altura))
+    cortes.append(cilindro(8, saia_teto + 2, (FURO_FIOS[0], FURO_FIOS[1], H - saia_teto - 1)))  # fios da balanca
     if furo_chave:
         cortes.append(rrect(chave_largura, chave_comprimento, saia_teto + 2, 2)
                       .translate((chave_pos_x, chave_pos_y, H - saia_teto - 1)))
@@ -244,64 +246,123 @@ def saia():
 
 
 # ---------------------------------------------------------------------
-# Coluna e bandejas
+# Coluna
 # ---------------------------------------------------------------------
 def coluna():
-    # Trechos do meio e de cima com lado reto: as bandejas nao giram
+    # Todos os trechos com lado reto: a base da balanca e a cabeca nao giram
     c = (dforma(coluna_d1, coluna_h1)
          .union(dforma(coluna_d2, coluna_h2).translate((0, 0, coluna_h1)))
          .union(dforma(coluna_d3, coluna_h3).translate((0, 0, coluna_h1 + coluna_h2))))
     return c.cut(cilindro(canal_fios, coluna_altura + 2, (0, 0, -1)))
 
 
-def bandeja(largura, comprimento, d, coluna_d):
-    def forma(recuo, h, z=0.0):
-        if bandeja_formato == "redonda":
-            return cilindro(d - 2 * recuo, h, (0, 0, z))
-        return rrect(largura - 2 * recuo, comprimento - 2 * recuo, h, bandeja_raio_canto - recuo).translate((0, AVANCO, z))
-
-    b = (forma(0, bandeja_esp)
-         .union(forma(0, bandeja_borda).cut(forma(2.4, bandeja_borda + 2, -1)))
-         .union(cilindro(coluna_d + 2 * folga + 8, bandeja_esp + bandeja_colar)))
-    return b.cut(dforma(coluna_d, bandeja_esp + bandeja_colar + 2, folga).translate((0, 0, -1)))
-
-
-def bandeja_baixo():
-    return bandeja(bandeja_baixo_largura, bandeja_baixo_comprimento, bandeja_baixo_d, coluna_d2)
-
-
-def bandeja_cima():
-    return bandeja(bandeja_cima_largura, bandeja_cima_comprimento, bandeja_cima_d, coluna_d3)
-
-
-# Apoios ("espinhas"): anel em D na coluna + aleta embaixo do eixo da bandeja,
-# da traseira ate quase a frente. Seguram o balanco que a coluna recuada criou.
-def apoio(coluna_d, h, y0, y1, prof_ring, prof_ponta):
-    anel_d = coluna_d + 2 * folga + 6
-    t = apoio_espessura
-    # aleta: perfil (y, z) com o topo em h e o fundo subindo para as pontas
-    def aleta(ya, yb, pa, pb):
-        pts = [(ya, h), (yb, h), (yb, h - pb), (ya, h - pa)]
-        return cq.Workplane("YZ").polyline(pts).close().extrude(t / 2, both=True)
-    a = (cilindro(anel_d, h)
-         .union(aleta(anel_d / 2 - 1, y1, prof_ring, prof_ponta))
-         .union(aleta(y0, -anel_d / 2 + 1, prof_ponta, prof_ring)))
-    return a.cut(dforma(coluna_d, h + 2, folga).translate((0, 0, -1)))
+# ---------------------------------------------------------------------
+# Bandeja e balanca. Tudo desenhado na posicao montada (origem = meio do
+# chassi, z = 0 no topo da base de acrilico); as pecas impressas sao
+# levadas para a mesa da impressora em PECAS.
+# ---------------------------------------------------------------------
+ZB = H + bandeja_altura                       # fundo da bandeja
+ZC = H + celula_base                          # embaixo da celula
+ZS = ZC + celula_lado                         # em cima da celula = embaixo da aranha
+CEL_Y0 = celula_pos_y                         # ponta presa
+CEL_Y1 = celula_pos_y + celula_comprimento    # ponta solta
+HUB_Y = CEL_Y1 - (celula_furo_1 + celula_furo_2) / 2   # meio dos 2 furos da ponta solta
+FUROS_PRESA = (CEL_Y0 + celula_furo_1, CEL_Y0 + celula_furo_2)
+FUROS_SOLTA = (CEL_Y1 - celula_furo_1, CEL_Y1 - celula_furo_2)
+FURO_COLUNA = coluna_d1 + 2 * bandeja_folga_coluna       # recorte da bandeja em volta da coluna
+Y_FRENTE = bandeja_pos_y + bandeja_comprimento / 2
+BY = Y_FRENTE + botao_avanco                  # centro do botao
+NARIZ_R = 12                                  # raio do "nariz" que segura o botao
+PONTAS = [(sx * (bandeja_largura / 2 - aranha_ponta), bandeja_pos_y + sy * (bandeja_comprimento / 2 - aranha_ponta))
+          for sy in (-1, 1) for sx in (-1, 1)]
+PINO_D, PINO_H = 4, 2.5                       # pinos da aranha que seguram a bandeja
+FURO_FIOS = (celula_lado / 2 + 8, CEL_Y0 + 12)   # furo no teto da saia: fios da celula e do botao
+ANEL_BASE_D = coluna_d1 + 2 * folga + 6
+CAPO_Z0 = ZB - 3 - 24                         # fundo do capo (o botao tem ~21 mm embaixo do painel)
 
 
-AVANCO = bandeja_pos_y - coluna_pos_y
-H_APOIO_BAIXO = coluna_h1 - encaixe_prof                        # do teto da saia ate a bandeja de baixo
-H_APOIO_CIMA = coluna_h2 - bandeja_esp - bandeja_colar          # do colar de baixo ate a bandeja de cima
+def forma_bandeja(recuo, h):
+    """Contorno da bandeja (com o recorte da coluna) encolhido 'recuo' mm, extrudado h."""
+    corpo = rrect(bandeja_largura - 2 * recuo, bandeja_comprimento - 2 * recuo, h,
+                  bandeja_raio_canto - recuo).translate((0, bandeja_pos_y, 0))
+    d = FURO_COLUNA + 2 * recuo
+    recorte = (cilindro(d, h + 2, (0, coluna_pos_y, -1))
+               .union(caixa(-d / 2, d / 2, -L, coluna_pos_y, -1, h + 1)))
+    return corpo.cut(recorte)
 
 
-def apoio_baixo():   # anel apoiado no teto da saia; a aleta afina para as pontas
-    return apoio(coluna_d1, H_APOIO_BAIXO, AVANCO - bandeja_baixo_comprimento / 2 + 12,
-                 AVANCO + bandeja_baixo_comprimento / 2 - 12, H_APOIO_BAIXO, 6)
+def bandeja():
+    """Bandeja unica: sem fio e sem parafuso; encaixa nos 4 pinos da aranha."""
+    b = forma_bandeja(0, bandeja_esp).union(forma_bandeja(0, bandeja_borda).cut(forma_bandeja(2.4, bandeja_borda + 2)))
+    for x, y in PONTAS:
+        b = b.cut(cilindro(PINO_D + 0.4, bandeja_esp + 2, (x, y, -1)))
+    return b
 
 
-def apoio_cima():    # pendurado: aleta afina para a frente (deixa vão sobre a bandeja de baixo)
-    return apoio(coluna_d2, H_APOIO_CIMA, AVANCO - bandeja_cima_comprimento / 2 + 10,
-                 AVANCO + bandeja_cima_comprimento / 2 - 10, 12, 4)
+def base_balanca():
+    """Anel na coluna + pe que segura a ponta presa da celula + batente embaixo da ponta solta."""
+    b = cilindro(ANEL_BASE_D, 20, (0, coluna_pos_y, H))
+    b = b.union(caixa(-8, 8, coluna_pos_y, CEL_Y0 + 20, H, ZC))
+    b = b.union(caixa(-3, 3, CEL_Y0 + 19, CEL_Y1 - 2, H, ZC - 3))           # batente (parafuso M3 regula a folga)
+    b = b.cut(dforma(coluna_d1, 22, folga).translate((0, coluna_pos_y, H - 1)))
+    for y in FUROS_PRESA:
+        b = b.cut(cilindro(celula_parafuso + 0.4, celula_base + 2, (0, y, H - 1)))
+        b = b.cut(cilindro(8, 4, (0, y, H - 1)))                             # cabeca do parafuso, por baixo
+    b = b.cut(cilindro(2.8, 10, (0, HUB_Y, H - 1)))                          # parafuso-batente M3
+    return b
+
+
+def aranha():
+    """Suporte em X parafusado na ponta solta da celula; a bandeja so encosta nele.
+    O braco da frente vira o nariz do botao (os fios correm num canal por baixo)."""
+    h = ZB - ZS
+    a = caixa(-12, 12, HUB_Y - 12, HUB_Y + 12, ZS, ZB)
+    for x, y in PONTAS + [(0, BY)]:
+        larg = 10 if x == 0 else aranha_largura
+        ang = math.atan2(y - HUB_Y, x)
+        nx, ny = -math.sin(ang) * larg / 2, math.cos(ang) * larg / 2
+        braco = (cq.Workplane("XY").polyline([(nx, HUB_Y + ny), (x + nx, y + ny), (x - nx, y - ny), (-nx, HUB_Y - ny)])
+                 .close().extrude(h).translate((0, 0, ZS)))
+        a = a.union(braco).union(cilindro(larg, h, (x, y, ZS)))
+    a = a.union(cilindro(2 * NARIZ_R, h, (0, BY, ZS)))
+    for x, y in PONTAS:
+        a = a.union(cilindro(PINO_D, PINO_H, (x, y, ZB)))
+    if botao:   # aro de protecao (um prato nao aperta sem querer); fica na frente da borda da bandeja
+        a = a.union(cilindro(21, 6, (0, BY, ZB)).cut(cilindro(17, 8, (0, BY, ZB - 1))))
+    cortes = [
+        caixa(-celula_lado / 2 - 1.5, celula_lado / 2 + 1.5, CEL_Y0 - 1, HUB_Y - 12, ZS - 1, ZS + 1.5),  # nao encosta na celula
+        cilindro(20, h - 3 + 1, (0, BY, ZS - 1)),                               # vao da porca do botao
+        caixa(-2.5, 2.5, HUB_Y + 12 - 1, BY - 8, ZS - 1, ZS + 3.5),             # canal dos fios por baixo
+    ]
+    if botao:
+        cortes.append(cilindro(botao_furo, h + 2, (0, BY, ZS)))
+    for y in FUROS_SOLTA:
+        cortes.append(cilindro(celula_parafuso + 0.4, h + 2, (0, y, ZS - 1)))
+        cortes.append(cilindro(8, 4, (0, y, ZB - 3.5)))                        # cabeca do parafuso, por cima
+    for c in cortes:
+        a = a.cut(c)
+    return a
+
+
+def capo_botao():
+    """Copinho que encaixa por baixo do nariz e esconde o corpo do botao e os fios."""
+    alto = ZS - CAPO_Z0
+    copo = cq.Workplane("XY").add(cq.Solid.makeCone(8, NARIZ_R, alto, cq.Vector(0, BY, CAPO_Z0)))
+    copo = copo.cut(cq.Workplane("XY").add(cq.Solid.makeCone(6.5, NARIZ_R - 1.6, alto, cq.Vector(0, BY, CAPO_Z0 + 1.6))))
+    encaixe = (cilindro(19.6, 4, (0, BY, ZS - 0.01)).union(cilindro(2 * NARIZ_R, 1.5, (0, BY, ZS - 1.5)))
+               .cut(cilindro(16, 8, (0, BY, ZS - 3))))                            # anel que entra no nariz + tampa
+    encaixe = encaixe.cut(caixa(-3, 3, BY - 11, BY - 7, ZS - 3, ZS + 5))       # passagem dos fios (para tras)
+    return copo.union(encaixe)
+
+
+def celula():
+    """Celula de carga (comprada, NAO imprime): so para a montagem e o prototipo."""
+    c = caixa(-celula_lado / 2, celula_lado / 2, CEL_Y0, CEL_Y1, ZC, ZS)
+    m = celula_comprimento / 2
+    c = c.cut(caixa(-celula_lado, celula_lado, CEL_Y0 + m - 10, CEL_Y0 + m + 10, ZC + 2.5, ZS - 2.5))
+    for y in FUROS_PRESA + FUROS_SOLTA:
+        c = c.cut(cilindro(celula_parafuso, celula_lado + 2, (0, y, ZC - 1)))
+    return c
 
 
 # ---------------------------------------------------------------------
@@ -416,15 +477,9 @@ PECAS = {
              lambda o: o),
     "coluna": (coluna, lambda o: o,
                lambda o: o.translate((0, coluna_pos_y, coluna_z0))),
-    "bandeja_baixo": (bandeja_baixo, lambda o: o,
-                      lambda o: o.translate((0, coluna_pos_y, coluna_z0 + coluna_h1))),
-    "bandeja_cima": (bandeja_cima, lambda o: o,
-                     lambda o: o.translate((0, coluna_pos_y, coluna_z0 + coluna_h1 + coluna_h2))),
-    "apoio_baixo": (apoio_baixo, lambda o: o.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, H_APOIO_BAIXO)),
-                    lambda o: o.translate((0, coluna_pos_y, H))),
-    "apoio_cima": (apoio_cima,
-                   lambda o: o.rotate((0, 0, 0), (1, 0, 0), 180).translate((0, 0, H_APOIO_CIMA)),
-                   lambda o: o.translate((0, coluna_pos_y, coluna_z0 + coluna_h1 + bandeja_esp + bandeja_colar))),
+    "bandeja": (bandeja, lambda o: o, lambda o: o.translate((0, 0, ZB))),
+    "base_balanca": (base_balanca, lambda o: o.translate((0, 0, -H)), lambda o: o),
+    "aranha": (aranha, lambda o: o.translate((0, 0, -ZS)), lambda o: o),
     "cabeca": (cabeca,
                lambda o: o.rotate((0, 0, 0), (1, 0, 0), -90).translate((0, 0, fy)),
                lambda o: o.translate((0, coluna_pos_y, cabeca_z0))),
@@ -432,6 +487,8 @@ PECAS = {
                      lambda o: o.rotate((0, 0, 0), (1, 0, 0), 90).translate((0, 0, 2 - cab_tras)),
                      lambda o: o.translate((0, coluna_pos_y, cabeca_z0))),
 }
+if botao:
+    PECAS["capo_botao"] = (capo_botao, lambda o: o.translate((0, 0, -CAPO_Z0)), lambda o: o)
 if antitombo:   # em pe na mesa (o perfil para baixo): imprime sem suporte
     PECAS["pe_antitombo"] = (pe_antitombo, lambda o: o.rotate((0, 0, 0), (0, 1, 0), 90), lambda o: o)
 
@@ -496,9 +553,9 @@ if portinhas and abertura_lateral:
     PECAS["tampa_lateral"] = (tampa_lateral, lambda o: o, lambda o: o)
 
 
-CORES = {"saia": (0.91, 0.89, 0.82), "coluna": (0.85, 0.82, 0.74), "bandeja_baixo": (0.79, 0.44, 0.23),
-         "bandeja_cima": (0.79, 0.44, 0.23), "apoio_baixo": (0.85, 0.82, 0.74),
-         "apoio_cima": (0.85, 0.82, 0.74), "pe_antitombo": (0.85, 0.82, 0.74), "tampa_traseira": (0.91, 0.89, 0.82),
+CORES = {"saia": (0.91, 0.89, 0.82), "coluna": (0.85, 0.82, 0.74), "bandeja": (0.79, 0.44, 0.23),
+         "base_balanca": (0.85, 0.82, 0.74), "aranha": (0.85, 0.82, 0.74), "capo_botao": (0.85, 0.82, 0.74),
+         "pe_antitombo": (0.85, 0.82, 0.74), "tampa_traseira": (0.91, 0.89, 0.82),
          "tampa_lateral": (0.91, 0.89, 0.82), "cabeca": (0.95, 0.93, 0.89), "cabeca_tampa": (0.54, 0.52, 0.47)}
 
 
@@ -524,7 +581,16 @@ def main():
         bb = p.val().BoundingBox()
         print(f"           {bb.xlen:.1f} x {bb.ylen:.1f} x {bb.zlen:.1f} mm, volume {p.val().Volume()/1000:.1f} cm3")
         montagem.add(montada(obj), name=nome_peca, color=cq.Color(*CORES[nome_peca]))
+    montagem.add(celula(), name="celula_de_carga_500g_COMPRADA", color=cq.Color(0.78, 0.80, 0.82))
     montagem.save(str(PASTA / "step" / "montagem.step"))
+    for velho in (PASTA / "step").glob("*.step"):   # pecas que nao existem mais
+        if velho.stem not in PECAS and velho.stem not in ("montagem", "prototipo_completo"):
+            velho.unlink()
+            print(f"[CARCACA] apagado step\\{velho.name} (peca que nao existe mais)")
+    for velho in (PASTA / "stl").glob("*.stl"):
+        if velho.stem not in PECAS:
+            velho.unlink()
+            print(f"[CARCACA] apagado stl\\{velho.name} (peca que nao existe mais)")
     sincronizar_scad(M, PASTA / "robo_garcom_carcaca.scad")
     print("[CARCACA] OpenSCAD atualizado com as mesmas medidas")
 
@@ -534,16 +600,16 @@ def main():
     p = impressas
     erros += bandeja_3mf.montar(PASTA / "impressao", [
         ("1_cabeca_e_tampa_TESTE", [("cabeca", p["cabeca"], 60, 110, 0),
-                                    ("cabeca_tampa", p["cabeca_tampa"], 150, 110, 0),
-                                    ("apoio_baixo", p["apoio_baixo"], 110, 32, 90)]
+                                    ("cabeca_tampa", p["cabeca_tampa"], 150, 110, 0)]
                                    + ([("tampa_traseira", p["tampa_traseira"], 60, 182, 0)] if "tampa_traseira" in p else [])
-                                   + ([("tampa_lateral", p["tampa_lateral"], 160, 182, 90)] if "tampa_lateral" in p else [])),
+                                   + ([("tampa_lateral", p["tampa_lateral"], 160, 182, 90)] if "tampa_lateral" in p else [])
+                                   + ([("capo_botao", p["capo_botao"], 110, 30, 0)] if "capo_botao" in p else [])),
         ("2_saia", [("saia", p["saia"], 110, 110, 0)]),
-        ("3_bandeja_baixo_coluna_e_pe", [("bandeja_baixo", p["bandeja_baixo"], 80, 110, 0),
-                                      ("coluna", p["coluna"], 185, 110, 0)]
-                                     + ([("pe_antitombo", p["pe_antitombo"], 185, 40, 0)] if antitombo else [])),
-        ("4_bandeja_cima_e_apoio", [("bandeja_cima", p["bandeja_cima"], 72, 110, 0),
-                                    ("apoio_cima", p["apoio_cima"], 180, 110, 0)]),
+        ("3_bandeja_coluna_e_pe", [("bandeja", p["bandeja"], 80, 110, 0),
+                                   ("coluna", p["coluna"], 185, 150, 0)]
+                                  + ([("pe_antitombo", p["pe_antitombo"], 185, 45, 0)] if antitombo else [])),
+        ("4_aranha_e_base_da_balanca", [("aranha", p["aranha"], 68, 110, 0),
+                                        ("base_balanca", p["base_balanca"], 180, 110, 0)]),
     ], mesa_impressora)
     if erros:
         sys.exit(f"[ERRO] {erros} peca(s) ou bandeja(s) com problema. Confira as medidas.")

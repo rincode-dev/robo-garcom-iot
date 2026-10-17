@@ -377,6 +377,14 @@ def fios():
     return f
 
 
+def botao_verde(parte):
+    """Botao de painel de 12 mm preso no nariz da aranha (capa verde + corpo e porca)."""
+    x, y, z = 0, g.BY, g.ZB
+    if parte == "capa":
+        return junta(cil(7.5, 1.6, (x, y, z)), cil(4.75, 5.5, (x, y, z)))
+    return junta(cil(5.9, 16, (x, y, z - 3 - 16)), cil(8, 3, (x, y, z - 3 - 3)))
+
+
 # ---------------------------------------------------------------------
 # Montagem
 # ---------------------------------------------------------------------
@@ -404,10 +412,11 @@ def montar():
     grupos = {
         "1_carcaca": [
             ("saia", car["saia"], "creme"), ("coluna", car["coluna"], "creme2"),
-            ("apoio_baixo", car["apoio_baixo"], "creme2"), ("apoio_cima", car["apoio_cima"], "creme2"),
+            ("base_balanca", car["base_balanca"], "creme2"), ("aranha", car["aranha"], "creme2"),
+            *([("capo_botao", car["capo_botao"], "creme2")] if "capo_botao" in car else []),
             *([("pe_antitombo", car["pe_antitombo"], "creme2")] if "pe_antitombo" in car else []),
             *[(n, car[n], "creme") for n in ("tampa_traseira", "tampa_lateral") if n in car],
-            ("bandeja_baixo", car["bandeja_baixo"], "terracota"), ("bandeja_cima", car["bandeja_cima"], "terracota"),
+            ("bandeja", car["bandeja"], "terracota"),
             ("cabeca", car["cabeca"], "branco"), ("cabeca_tampa", car["cabeca_tampa"], "cinza"),
         ],
         "2_chassi_rodas_motores": [
@@ -433,6 +442,11 @@ def montar():
             ("ESP32CAM_barras_pinos", esp32cam("barras"), "preto"), ("ESP32CAM_pinos", esp32cam("pinos"), "dourado"),
         ],
         "5_fios": [(f"fio_{nome}", forma, cor) for nome, (cor, forma) in f.items()],
+        "6_balanca_e_botao": [
+            ("celula_de_carga_500g", g.celula().val(), "metal"),
+            *([("botao_verde_capa", botao_verde("capa"), "verde"), ("botao_verde_corpo", botao_verde("corpo"), "preto")]
+              if g.botao else []),
+        ],
     }
     for cor, forma in trilhas_pb().items():
         grupos["3_energia"].append((f"protoboard_trilha_{cor}", forma, cor))

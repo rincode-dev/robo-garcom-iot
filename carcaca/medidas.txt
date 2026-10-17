@@ -1,9 +1,10 @@
 # =====================================================================
 # MEDIDAS DA CARCAÇA (conceito B · Torre de Serviço). Unidades: mm.
 #
-# Versão oficial: coluna recuada, pilhas na frente, pé antitombo e portinhas.
-# A primeira versão (coluna no centro, pilhas atrás) fica guardada na marca do
-# Git "bandejito-1.0-original". Os comentários "v2: era ..." dizem como era nela.
+# Versão oficial: UMA bandeja grande em cima de uma balança (célula de carga),
+# botão verde no "nariz" da frente, coluna recuada, pilhas na frente, pé
+# antitombo e portinhas. A versão de 2 bandejas fica guardada na marca do Git
+# "bandejito-2-bandejas".
 #
 # Este é o "painel de números" da carcaça:
 #   1. Mude o número depois do "=". Pode usar vírgula ou ponto (40,5 ou 40.5).
@@ -51,7 +52,7 @@ roda_pos_y         = -29    # eixo das rodas: + = frente, - = trás (MEDIR; as f
 roda_eixo_z        = -12    # altura do eixo vs. topo da base; negativo = abaixo (MEDIR)
 roda_folga         = 3      # espaço livre em volta da roda
 
-# --- Apoio antitombo (v2): pezinho embaixo da traseira da base ------------
+# --- Apoio antitombo: pezinho embaixo da traseira da base ------------
 # Se o robô empinar numa arrancada, a ponta redonda encosta no chão e segura.
 antitombo          = true   # false = sem o pezinho
 antitombo_folga    = 6      # distância da ponta até o chão com o robô parado
@@ -66,33 +67,31 @@ saia_recuo         = 2      # a saia fica esse tanto para dentro da borda da bas
 saia_raio_canto    = 4      # arredondado dos cantos do contorno
 parede             = 2      # espessura das paredes
 saia_teto          = 2.5
-abertura_traseira  = true   # abertura atrás (v2: acesso ao regulador LM2596, ao display e ao trimpot)
+abertura_traseira  = true   # abertura atrás (acesso ao regulador LM2596, ao display e ao trimpot)
 abertura_traseira_largura = 70
 abertura_traseira_altura  = 45
-# v2: as pilhas ficam na FRENTE (centro de massa mais para a frente): saem por esta abertura lateral
+# As pilhas ficam na FRENTE (centro de massa mais para a frente): saem por esta abertura lateral
 abertura_lateral   = true
 abertura_lateral_lado    = -1     # -1 = lado esquerdo, 1 = lado direito (olhando o robô por trás)
 abertura_lateral_pos_y   = 56     # centro da abertura (= meio do suporte das pilhas)
 abertura_lateral_largura = 62
 abertura_lateral_altura  = 45
-# v2: portinhas de encaixe que fecham a abertura de trás e a lateral (aba em cima + "clique" embaixo)
+# Portinhas de encaixe que fecham a abertura de trás e a lateral (aba em cima + "clique" embaixo)
 portinhas          = true
 portinha_folga     = 0.25   # folga em volta (aumente se ficar dura; diminua se ficar solta)
 furo_chave        = true   # furo no teto em cima da chave liga/desliga
 chave_pos_x        = 23     # + = direita (MEDIR; a chave fica na lateral do suporte das pilhas)
-chave_pos_y        = 48     # + = frente (MEDIR; v2: suporte das pilhas na frente, em y = 58)
+chave_pos_y        = 48     # + = frente (MEDIR; o suporte das pilhas fica na frente, em y = 58)
 chave_largura      = 14
 chave_comprimento  = 22
 nome               = "Bandejito 1.0"   # nome gravado na frente ("" = sem nome)
 nome_tamanho       = 10     # a frente agora tem 10 cm: o nome precisa caber nela
-coluna_pos_y       = -50    # posição da coluna: + = frente, - = trás (v2: era 0)
-bandeja_pos_y      = 0      # centro das bandejas no chassi (v2: ficam onde estavam; o furo vai para trás)
-apoio_espessura    = 4      # v2: espessura das "espinhas" de apoio embaixo das bandejas
+coluna_pos_y       = -50    # posição da coluna: + = frente, - = trás (fica atrás do centro da bandeja)
 
 # --- Coluna ------------------------------------------------------------
-coluna_d1          = 36     # trecho de baixo (entra na saia, segura a bandeja de baixo)
+coluna_d1          = 36     # trecho de baixo (entra na saia; a base da balança abraça ele)
 coluna_h1          = 42
-coluna_d2          = 32     # trecho do meio (segura a bandeja de cima)
+coluna_d2          = 32     # trecho do meio
 coluna_h2          = 45
 coluna_d3          = 28     # trecho de cima (entra na cabeça)
 coluna_h3          = 38
@@ -100,27 +99,41 @@ canal_fios         = 18     # canal oco para os 6 fios
 encaixe_prof       = 12     # profundidade dos encaixes
 encaixe_corte      = 2      # lado reto do encaixe (não deixa girar)
 
-# --- Bandejas ----------------------------------------------------------
-bandeja_formato    = "retangular"   # "retangular" (cantos arredondados) ou "redonda"
-# Retangulares: proporção 1 : 1,4. Ficam mais largas que o corpo (10 cm),
-# como a bandeja de um garçom; a de baixo não passa das rodas (~16 cm).
-bandeja_baixo_largura     = 136   # de lado a lado
-bandeja_baixo_comprimento = 190   # da frente para trás
-bandeja_cima_largura      = 104   # menor que a de baixo: sobra uma faixa livre em volta
-bandeja_cima_comprimento  = 146
-bandeja_raio_canto = 16
-# Redondas (só valem com bandeja_formato = "redonda")
-bandeja_baixo_d    = 130
-bandeja_cima_d     = 100
-bandeja_esp        = 3
-bandeja_borda      = 6      # altura da borda
-bandeja_colar      = 8      # altura do colar em volta do furo
+# --- Bandeja (uma só, grande) -------------------------------------------
+# A bandeja NÃO encosta na coluna: ela fica solta em cima da "aranha", que fica
+# em cima da balança. Assim todo o peso do pedido passa pela balança.
+bandeja_largura     = 150   # de lado a lado (não passa das rodas)
+bandeja_comprimento = 190   # da frente para trás
+bandeja_raio_canto  = 16
+bandeja_pos_y       = 0     # centro da bandeja no chassi
+bandeja_altura      = 30    # do teto da saia até o fundo da bandeja (a balança fica nesse vão)
+bandeja_esp         = 3
+bandeja_borda       = 6     # altura da borda (segura o que estiver na bandeja)
+bandeja_folga_coluna = 2.5  # folga do recorte em volta da coluna (a bandeja não pode encostar)
+
+# --- Balança: célula de carga em barra de 500 g + HX711 -----------------
+# A ponta de trás da célula é presa na "base da balança" (anel na coluna); a
+# ponta da frente segura a "aranha" (suporte em X) e a aranha segura a bandeja.
+celula_comprimento  = 80    # (MEDIR) o modelo comum de 500 g tem 80 x 12,7 x 12,7 mm
+celula_lado         = 12.7  # (MEDIR) altura e largura da barra
+celula_furo_1       = 5     # (MEDIR) do fim da barra até o 1º furo, nas duas pontas
+celula_furo_2       = 15    # (MEDIR) do fim da barra até o 2º furo
+celula_parafuso     = 4     # (MEDIR) M4 na maioria; algumas de 500 g usam M3
+celula_pos_y        = -28   # onde começa a ponta presa (perto da coluna)
+celula_base         = 8     # altura do pé embaixo da ponta presa (esconde a cabeça dos parafusos)
+aranha_ponta        = 17    # quanto as 4 pontas da aranha ficam para dentro dos cantos da bandeja
+aranha_largura      = 8     # largura dos braços da aranha
+
+# --- Botão verde (no "nariz" da aranha, na frente da bandeja) -------------
+botao              = true
+botao_furo         = 12.3   # botão de painel de 12 mm (com porca)
+botao_avanco       = 11.5   # centro do botão: quanto fica à frente da bandeja (o aro não pode encostar na borda)
 
 # --- Cabeça e ESP32-CAM ------------------------------------------------
 cab_largura        = 52
 cab_profundidade   = 48
 cab_altura         = 68
-inclinacao         = 10     # quanto a câmera olha para baixo (graus; v2: era 15, para a borda da bandeja de cima não aparecer no vídeo)
+inclinacao         = 10     # quanto a câmera olha para baixo (graus)
 placa_largura      = 27     # ESP32-CAM (do anúncio)
 placa_altura       = 40.5   # ESP32-CAM (do anúncio)
 placa_esp          = 1.6

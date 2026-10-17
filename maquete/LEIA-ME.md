@@ -14,7 +14,7 @@ O Bandejito tem ~27 cm de altura. Um robô garçom de verdade tem ~1,25 m, entã
 | Cadeira | assento a 45 cm, encosto até 90 cm | assento a **10 cm**, encosto até **19 cm** |
 | Balcão | ~80 cm | **17 cm** |
 
-A mesa fica **entre as duas bandejas do robô** (13 e 17,5 cm do chão), e o balcão fica na altura da bandeja de cima: é o que os robôs garçons de verdade fazem.
+A mesa (15 cm) fica **um pouco acima da bandeja do robô** (13,5 cm do chão) e o balcão (17 cm) também: o cliente e o garçom pegam o pedido sem se abaixar, como nos robôs garçons de verdade.
 
 ## Bandejas prontas para imprimir (pasta `impressao\`)
 

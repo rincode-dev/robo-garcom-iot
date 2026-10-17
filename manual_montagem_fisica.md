@@ -311,6 +311,7 @@ O **IO12** é lido pela ESP32 no momento do boot para escolher a tensão da mem�
 | **ESP32-CAM** | Dentro da cabeça, em cima da coluna (que fica atrás, quase em cima do eixo das rodas) | Os 6 fios descem pelo canal oco da coluna |
 
 - **Pé antitombo** (peça impressa da carcaça): parafuse **embaixo da traseira da base**, atrás das rodas, com 2 parafusos M3 × 10 de cima para baixo. A ponta redonda fica uns 6 mm acima do chão: se o robô empinar, ela encosta e segura.
+- **Bandeja, balança e botão** (em cima da saia): o passo a passo está em `carcaca/LEIA-ME.md`, "Como montar" (passos 3 a 6). Resumo: a **célula de carga** fica presa na base da balança (anel na coluna); a **aranha** é parafusada na ponta solta da célula; a **bandeja** só encaixa nos 4 pininhos da aranha e **não pode encostar em mais nada**. Os fios da célula e do botão entram na saia pelo furo de 8 mm do teto, ao lado da coluna, **com folga**. A ligação deles na ESP32 DevKit (módulo HX711) é da **Fase 5**: até lá, deixe os fios enrolados dentro da saia.
 - Organize os cabos com abraçadeiras. Nada pode encostar nas rodas.
 
 ### 8.7 Diagrama completo

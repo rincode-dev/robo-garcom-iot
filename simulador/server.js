@@ -111,7 +111,7 @@ const AUTO = {
 // Geometria da pista
 // ---------------------------------------------------------------------------
 // Postos: balcão + 3 mesas, alternando os lados da linha. A marca de cada mesa fica
-// 8 cm DEPOIS dela (no sentido da ida), para o centro do robô (onde ficam as bandejas)
+// 8 cm DEPOIS dela (no sentido da ida), para o centro do robô (onde fica a bandeja)
 // parar bem ao lado da mesa. A mesa fica a 28 cm da linha: o giro no lugar "varre"
 // um círculo de ~14,5 cm de raio em volta do eixo das rodas e não pode bater nela.
 const MESA_DIST = 28;
@@ -345,7 +345,7 @@ function passoGiro(s, n, dt) {
 function falar() {
   const n = auto.posicao;
   auto.fala = { n: auto.fala.n + 1,
-    texto: `Mesa ${n}, seu pedido chegou! Retire da bandeja e aperte o botão verde.` };
+    texto: `Mesa ${n}, seu pedido chegou! Pode retirar da bandeja.` };
   auto.falaEm = Date.now(); // relógio real: é o tempo que o cliente espera
   log(`[VOZ] Tocando a mensagem da mesa ${n} (arquivo ${String(n).padStart(4, '0')}.mp3)`);
 }
@@ -591,7 +591,7 @@ function render() {
   const cor = auto.modo === 'manual' ? (robot.dir === 'stop' ? COR_ESTADO.manual : [62, 207, 142])
                                      : COR_ESTADO[auto.estado];
   fillRotRect(c.x, c.y, h, CHASSI_COMP, CHASSI_LARG - 3, cor);
-  fillRotRect(c.x, c.y, h, 13, 9.5, [201, 111, 59]);            // bandeja de cima (terracota)
+  fillRotRect(c.x, c.y, h, 13, 9.5, [201, 111, 59]);            // bandeja (terracota)
   fillCircle(c.x * PX, c.y * PX, 2.6 * PX, [242, 238, 227]);    // cabeça
   fillCircle((c.x + Math.cos(h) * 2.4) * PX, (c.y + Math.sin(h) * 2.4) * PX, 1.6, [40, 40, 40]); // lente
   for (let i = 0; i < 5; i++) {

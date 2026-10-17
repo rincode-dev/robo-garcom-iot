@@ -285,7 +285,7 @@ Veja a **Etapa 14** do manual. Resumo:
 
 > **Só comece depois do Checkpoint da Fase 3** (robô funcionando no modo manual pelo celular). Nada desta fase muda a montagem da Fase 3: ela só **acrescenta** peças.
 
-**Objetivo (nível 3, escolhido pelo dono em 2026-10-14):** pela página no celular, alguém faz o pedido para uma mesa. O robô sai do balcão (base) seguindo uma **fita preta no chão**, para na mesa certa, **vira de frente para ela**, **avisa pelo alto-falante** e espera o cliente apertar o **botão verde**. Depois vira para o balcão e volta pela mesma linha. O modo manual pelo celular continua existindo.
+**Objetivo (nível 3, escolhido pelo dono em 2026-10-14):** pela página no celular, alguém faz o pedido para uma mesa. O robô sai do balcão (base) seguindo uma **fita preta no chão**, para na mesa certa, **vira de frente para ela**, **avisa pelo alto-falante** e espera o cliente **tirar o pedido da bandeja** (a **balança** embaixo dela percebe) ou apertar o **botão verde**. Depois vira para o balcão e volta pela mesma linha. O modo manual pelo celular continua existindo.
 
 ### Decisões já tomadas
 - **Segundo cérebro:** uma **ESP32 DevKit** cuida dos motores e dos sensores. A ESP32-CAM fica só com o vídeo, o Wi-Fi e a página de pedidos. Motivo: a ESP32-CAM não tem pinos livres para sensores. As duas placas conversam por 2 fios (serial).
@@ -293,12 +293,12 @@ Veja a **Etapa 14** do manual. Resumo:
   - **Como ele sabe que deu meia-volta, sem medir o ângulo:** os sensores ficam 13,5 cm à frente do eixo das rodas. Girando em volta do eixo, eles saem da fita e só caem nela de novo depois de 180°, apontando para o outro lado.
 - **Virar de frente para a mesa + voz** (decisão do dono em 2026-10-16; testado no simulador). Na mesa, a meia-volta foi dividida em **dois giros de 90° no mesmo sentido**, cada um terminando numa fita:
   1. Na marca da mesa, o robô gira **para o lado da mesa** até o sensor do meio achar o **ramal**: um traço curto de fita que sai da linha em direção à mesa. Pronto: ele está de frente para ela.
-  2. O **alto-falante** toca a mensagem da mesa ("Mesa 2, seu pedido chegou! Retire da bandeja e aperte o botão verde."). Se ninguém apertar, repete a cada 20 s.
-  3. Com o **botão verde** apertado, ele continua girando **no mesmo sentido** por mais 90°, até o sensor do meio achar a **linha**. Agora ele está virado para o balcão e volta normalmente.
+  2. O **alto-falante** toca a mensagem da mesa ("Mesa 2, seu pedido chegou! Pode retirar da bandeja."). Se ninguém retirar, repete a cada 20 s.
+  3. Quando a **balança** percebe que o pedido saiu (ou o **botão verde** é apertado), ele continua girando **no mesmo sentido** por mais 90°, até o sensor do meio achar a **linha**. Agora ele está virado para o balcão e volta normalmente.
   - **Por que o ramal fica 13,5 cm ANTES da marca:** o robô para quando a **barra de sensores** chega na marca, e nessa hora o **eixo das rodas** (o ponto em volta do qual ele gira) está 13,5 cm para trás. O ramal precisa sair exatamente dali.
   - **Por que o ramal começa a 5 cm da linha, e não colado nela:** enquanto segue a fita, os sensores das pontas da barra ficam a até ~2,5 cm da linha. Com o espaço de 5 cm, eles nunca veem o ramal e o robô não se confunde (nem entorta, nem conta uma marca a mais).
   - **Por que funciona sem medir ângulo:** girando no lugar, o sensor do meio desenha um círculo de 13,5 cm de raio. Ele só cruza o ramal (que vai de 5 a 17 cm da linha) quando o robô está apontando para a mesa.
-  - **Peças a mais:** DFPlayer Mini + alto-falante + botão verde, todos ligados na ESP32 DevKit (veja "Ligações do alto-falante e do botão", abaixo).
+  - **Peças a mais:** célula de carga de 500 g + módulo HX711 (a balança), DFPlayer Mini + alto-falante + botão verde, todos ligados na ESP32 DevKit (veja "Ligações da balança, do alto-falante e do botão", abaixo).
   - **Giro suave:** em pulsos (liga/desliga os motores rapidinho), porque a menor velocidade dos motores ainda é rápida e poderia derrubar o que está na bandeja.
   - **Espaço para girar:** o giro "varre" um círculo de ~29 cm de diâmetro em volta do eixo das rodas (a ponta da frente fica a ~14,5 cm do eixo, com a base do kit das fotos). **Mesas, cadeiras e pés de pessoas precisam ficar a pelo menos ~15 cm da fita.**
   - **Pontas da linha:** um bloco de fita (4 × 8 cm) no balcão e outro no fim da linha. Se a fita simplesmente acabasse, o robô acharia que se perdeu.
@@ -322,8 +322,6 @@ Veja a **Etapa 14** do manual. Resumo:
 
 As medidas são as mesmas do simulador: o robô de verdade encontra a mesma pista que já foi testada no PC.
 
-![Maquete vista de cima, com as medidas](docs/imagens/maquete_cima.png)
-
 ![Maquete vista em ângulo](docs/imagens/maquete_angulo.png)
 
 1. **Tapete:** forre uma área de **2 m × 1,5 m** com EVA ou cartolina **clara** (o contraste com a fita preta é o que os sensores enxergam). Prenda as emendas por baixo, para não ficar degrau.
@@ -336,13 +334,13 @@ As medidas são as mesmas do simulador: o robô de verdade encontra a mesma pist
    - mesas 1 e 3: o ramal vai para o lado delas; mesa 2: para o outro lado;
    - **⚠️ confira com o robô montado:** os 13,5 cm são a distância entre a **barra de sensores** e o **eixo das rodas**. Meça no seu robô e use a sua medida. Alguns milímetros a mais ou a menos não atrapalham: o robô só fica um pouquinho de lado para a mesa.
 6. **Balcão:** encostado na ponta esquerda, com ~28 cm de comprimento e ~17 cm de altura. Dá para **imprimir em 3D** (2 módulos ripados e econômicos, pasta `maquete/`) ou usar uma caixa.
-7. **Mesas:** **15 cm de altura e ~18 cm de tampo** (na proporção do robô: o tampo fica entre as duas bandejas). Dá para **imprimir em 3D** (pasta `maquete/`, veja o `LEIA-ME.md` de lá) ou usar qualquer objeto parecido (pote, lata, caixa). Se tiver **cadeiras** (também na pasta `maquete/`), coloque 2 por mesa, **do lado oposto à fita**. O **meio** de cada mesa fica a **28 cm da linha** e **8 cm antes** da marca dela. Mesas 1 e 3 de um lado, mesa 2 do outro.
+7. **Mesas:** **15 cm de altura e ~18 cm de tampo** (na proporção do robô: o tampo fica um pouco acima da bandeja dele). Dá para **imprimir em 3D** (pasta `maquete/`, veja o `LEIA-ME.md` de lá) ou usar qualquer objeto parecido (pote, lata, caixa). Se tiver **cadeiras** (também na pasta `maquete/`), coloque 2 por mesa, **do lado oposto à fita**. O **meio** de cada mesa fica a **28 cm da linha** e **8 cm antes** da marca dela. Mesas 1 e 3 de um lado, mesa 2 do outro.
 8. **Faixa livre:** deixe **15 cm livres de cada lado da fita** (sem pés de mesa, cadeiras ou objetos), porque o robô gira no lugar no balcão e nas mesas. Os ramais ficam dentro dessa faixa, e tudo bem: são só fita no chão.
 9. **Robô:** coloque-o no balcão, **virado para as mesas**, com a barra de sensores em cima da fita, logo depois do bloco.
 
-> Testando no simulador antes? A página http://localhost:8080/pedidos mostra exatamente esta pista vista de cima, com os ramais. A vista em ângulo (`maquete_angulo.png`) e o `maquete/step/maquete_completa.step` já têm os ramais; a planta de cima (`maquete_cima.png`) ainda é de **antes** deles.
+> Testando no simulador antes? A página http://localhost:8080/pedidos mostra exatamente esta pista vista de cima, com os ramais. A vista em ângulo (`maquete_angulo.png`) e o `maquete/step/maquete_completa.step` mostram a mesma pista, com o robô no balcão.
 
-### Ligações do alto-falante e do botão (planejado; tudo na ESP32 DevKit)
+### Ligações da balança, do alto-falante e do botão (planejado; tudo na ESP32 DevKit)
 
 A ESP32-CAM não tem pinos livres, então tudo vai na **ESP32 DevKit** (o "segundo cérebro"). É ela que sabe quando o robô chegou na mesa.
 
@@ -353,12 +351,26 @@ A ESP32-CAM não tem pinos livres, então tudo vai na **ESP32 DevKit** (o "segun
 | | RX | DevKit **GPIO17** (TX2), **com um resistor de 1 kΩ no meio** | O resistor evita chiado e protege o módulo |
 | | TX | DevKit **GPIO16** (RX2) | |
 | | SPK_1 / SPK_2 | os 2 fios do **alto-falante** (8 Ω, 0,5 a 3 W, 28 a 40 mm) | O amplificador já vem no módulo. **Não** ligue o alto-falante no GND |
-| **Botão verde** (push button 12 mm de painel; o arcade de 30 mm é grande demais para a cabeça) | um terminal | DevKit **GPIO27** | O código liga o resistor interno (`INPUT_PULLUP`): solto = 1, apertado = 0 |
+| **HX711** (módulo da balança) | VCC | DevKit **3V3** | Em 3,3 V, os sinais dele ficam no nível que a ESP32 aguenta |
+| | GND | GND comum | |
+| | DT (ou DOUT) | DevKit **GPIO32** | |
+| | SCK (ou CLK) | DevKit **GPIO33** | |
+| | E+ / E− / A− / A+ | os 4 fios da **célula de carga**: vermelho → E+, preto → E−, branco → A−, verde → A+ | As cores mais comuns. Se o peso aparecer **negativo**, troque A− com A+ |
+| **Botão verde** (push button 12 mm de painel, no "nariz" da frente da bandeja) | um terminal | DevKit **GPIO27** | O código liga o resistor interno (`INPUT_PULLUP`): solto = 1, apertado = 0 |
 | | outro terminal | GND | |
 
-- **Cartão microSD do DFPlayer** (até 32 GB, FAT32): crie uma pasta `mp3` e, dentro dela, um arquivo por mesa: `0001.mp3` = "Mesa 1, seu pedido chegou! Retire da bandeja e aperte o botão verde.", `0002.mp3` = mesa 2, `0003.mp3` = mesa 3. Dá para gravar com a sua voz pelo celular ou gerar com uma voz do Windows (o Claude pode gerar os arquivos).
-- **Os pinos 16, 17 e 27 são uma sugestão**, porque estão livres na DevKit e não atrapalham o boot. A tabela definitiva vai para o `config.h` no Passo 5.2, junto com a dos sensores.
-- **Onde montar:** alto-falante virado para a frente, na saia ou na cabeça (precisa de furinhos na carcaça); botão verde em cima, num lugar fácil para o cliente apertar. A carcaça ainda **não** tem esses furos.
+- **Cartão microSD do DFPlayer** (até 32 GB, FAT32): crie uma pasta `mp3` e, dentro dela, um arquivo por mesa: `0001.mp3` = "Mesa 1, seu pedido chegou! Pode retirar da bandeja.", `0002.mp3` = mesa 2, `0003.mp3` = mesa 3. Dá para gravar com a sua voz pelo celular ou gerar com uma voz do Windows (o Claude pode gerar os arquivos).
+- **Os pinos 16, 17, 27, 32 e 33 são uma sugestão**, porque estão livres na DevKit e não atrapalham o boot. A tabela definitiva vai para o `config.h` no Passo 5.2, junto com a dos sensores.
+- **Onde montar:** a **balança** e o **botão** já têm lugar na carcaça (veja `carcaca/LEIA-ME.md`): a célula fica embaixo da bandeja, o botão no "nariz" da frente e o HX711 dentro da saia, perto do furo dos fios. O **alto-falante** vai virado para a frente, na saia ou na cabeça: a carcaça ainda **não** tem os furinhos dele.
+
+#### Balança: como o robô sabe que o pedido saiu
+
+- **Tara automática:** ao ligar, e toda vez que volta vazio ao balcão, o robô mede o que está em cima da célula (bandeja + aranha, ~100 g) e chama isso de **zero**. Assim o peso das peças impressas nunca atrapalha, e o zero não "escorrega" com o tempo.
+- **No balcão:** depois que o pedido é colocado, ele anota o peso (ex.: "+42 g").
+- **Na mesa:** quando o peso volta para perto do zero, o pedido foi retirado. Ele agradece e volta. Se o cliente tirar só uma parte, ele avisa que ainda tem item na bandeja.
+- **Só lê parado:** andando, a trepidação atrapalha a leitura.
+- **Limites (célula de 500 g):** percebe a partir de **~5–8 g** e aceita até **~380 g** de pedido. Pecinhas de maquete muito leves (copinho impresso de 3 g): imprima com mais preenchimento ou cole uma arruela embaixo. Para coisas levíssimas, vale o **botão verde**.
+- **Calibrar uma vez:** depois de montar, coloque na bandeja algo de peso conhecido (ex.: um celular pesado numa balança de cozinha). O robô aprende quantos "pontos" valem 1 grama e guarda na memória. O Claude passa o código no Passo 5.6.
 
 ### Degraus (cada um funciona sozinho)
 
@@ -369,7 +381,7 @@ A ESP32-CAM não tem pinos livres, então tudo vai na **ESP32 DevKit** (o "segun
 | 5.3 | **Freio automático:** parar se algo aparecer na frente (vale também no modo manual) | VL53L0X + janelinha na frente da saia | ⭐ |
 | 5.4 | **Seguir a linha** (linha reta de fita isolante) | Barra de 5 sensores TCRT5000 + fita | ⭐⭐⭐ |
 | 5.5 | **Parar na marca N**, **virar de frente para a mesa** (ramal), depois virar para o balcão e voltar | Marcas e ramais na fita | ⭐⭐⭐ |
-| 5.6 | **Pedidos pelo celular** + **botão verde** no robô + **mensagem no alto-falante** | DFPlayer Mini + alto-falante + botão | ⭐⭐ |
+| 5.6 | **Pedidos pelo celular** + **balança** (o robô percebe a retirada) + **botão verde** + **mensagem no alto-falante** | Célula de carga 500 g + HX711, DFPlayer Mini + alto-falante + botão | ⭐⭐ |
 
 Tempo estimado: **~4 a 5 fins de semana**, contando a partir do robô manual pronto. O mais trabalhoso é ajustar o 5.4 (testes com o robô no chão).
 
@@ -395,7 +407,7 @@ Na tela, os 5 pontinhos na frente do robô são os sensores de linha: ficam **ve
 - [ ] Robô para sozinho diante de um obstáculo (5.3)
 - [ ] Robô vai e volta pela linha sem sair dela (5.4)
 - [ ] Robô para na mesa pedida, vira de frente para ela, depois vira para o balcão e volta (5.5)
-- [ ] Pedido feito pelo celular; o robô fala a mensagem e volta quando o botão verde é apertado (5.6)
+- [ ] Pedido feito pelo celular; o robô fala a mensagem e volta quando o pedido é retirado da bandeja (balança) ou o botão verde é apertado (5.6)
 
 ---
 

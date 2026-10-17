@@ -10,16 +10,16 @@
 
 > 🚧 **Projeto em construção.** O software e o simulador estão prontos e testados; as peças do robô físico estão a caminho.
 
-Protótipo em miniatura de um robô garçom controlado pelo navegador, com **vídeo ao vivo** e **controle em tempo real**, construído com uma **ESP32-CAM** de baixo custo (~R$ 250 em peças). A próxima etapa é transformá-lo num **garçom autônomo**, que segue uma fita no chão, para na mesa certa, dá meia-volta e volta para o balcão.
+Protótipo em miniatura de um robô garçom controlado pelo navegador, com **vídeo ao vivo** e **controle em tempo real**, construído com uma **ESP32-CAM** de baixo custo (~R$ 250 em peças). A próxima etapa é transformá-lo num **garçom autônomo**, que segue uma fita no chão, para na mesa certa, **percebe pela balança quando o cliente retira o pedido** e volta para o balcão.
 
 <p align="center">
-  <img src="docs/imagens/bandejito_esqueleto_3d.gif" alt="Modelo 3D do Bandejito: volta completa, portinhas abrindo e fechando, montagem peça por peça, eletrônica e fios por dentro e o chassi" width="460"><br>
-  <em>Modelo 3D completo, gerado por código a partir de um arquivo de medidas: portinhas, montagem peça por peça, fiação por dentro e chassi.</em>
+  <img src="docs/imagens/bandejito_esqueleto_3d.gif" alt="Modelo 3D do Bandejito: volta completa, portinhas abrindo e fechando, montagem peça por peça, a balança embaixo da bandeja, eletrônica e fios por dentro e o chassi" width="460"><br>
+  <em>Modelo 3D completo, gerado por código a partir de um arquivo de medidas: portinhas, montagem peça por peça, a balança embaixo da bandeja, fiação por dentro e chassi.</em>
 </p>
 
 <p align="center">
-  <img src="docs/imagens/bandejito_maquete_3d.gif" alt="Animação 3D na maquete: o Bandejito leva o pedido à Mesa 2, espera uma pessoa sair do caminho, gira 90° até ficar de frente para a mesa, o cliente pega o copo e aperta o botão verde, e ele volta ao balcão" width="600"><br>
-  <em>O Bandejito na maquete impressa em 3D: leva o pedido à Mesa 2, freia e espera uma pessoa sair do caminho, gira 90° até ficar de frente para a mesa, espera o botão verde e volta ao balcão.</em>
+  <img src="docs/imagens/bandejito_maquete_3d.gif" alt="Animação 3D na maquete: o Bandejito leva o pedido à Mesa 2, espera uma pessoa sair do caminho, gira 90° até ficar de frente para a mesa, o cliente pega o copo da bandeja, a balança percebe e ele volta ao balcão" width="600"><br>
+  <em>O Bandejito na maquete impressa em 3D: leva o pedido à Mesa 2, freia e espera uma pessoa sair do caminho, gira 90° até ficar de frente para a mesa e, quando o cliente pega o copo, a balança percebe e ele volta ao balcão.</em>
 </p>
 
 ## O que ele faz
@@ -29,8 +29,8 @@ Protótipo em miniatura de um robô garçom controlado pelo navegador, com **ví
 - Controle por botões (toque/mouse) ou teclado (WASD/setas), com curvas, controle de velocidade e flash.
 - **Parada de segurança automática** se a conexão cair, e **partida suave** (o robô alto não "empina" na arrancada).
 - **Simulador** em Node.js: o mesmo painel e a mesma API, rodando no PC sem hardware.
-- **Garçom autônomo (no simulador):** fila de pedidos pelo celular, seguidor de linha com 5 sensores, contagem de mesas, **giro de 90° para ficar de frente para a mesa**, **mensagem de voz** ("Mesa 2, seu pedido chegou!"), **botão verde** para o cliente confirmar, volta ao balcão e freio diante de obstáculos.
-- **Carcaça impressa em 3D**, paramétrica, com bandejas e cabeça que abriga a câmera. A coluna fica recuada, perto do eixo das rodas, para deixar a frente das bandejas livre; pilhas na frente, pé antitombo e portinhas de encaixe.
+- **Garçom autônomo (no simulador):** fila de pedidos pelo celular, seguidor de linha com 5 sensores, contagem de mesas, **giro de 90° para ficar de frente para a mesa**, **mensagem de voz** ("Mesa 2, seu pedido chegou!"), confirmação da entrega (balança ou botão verde), volta ao balcão e freio diante de obstáculos.
+- **Carcaça impressa em 3D**, paramétrica: **uma bandeja grande em cima de uma balança** (célula de carga de 500 g + HX711), botão verde no "nariz" da frente, cabeça que abriga a câmera, coluna recuada, pilhas na frente, pé antitombo e portinhas de encaixe.
 
 ## Telas
 
@@ -79,7 +79,8 @@ As duas telas acima são do **simulador**: o painel é exatamente o mesmo HTML q
 | Voltar pela mesma linha sem encoder nem giroscópio | Meia-volta no lugar: a barra de sensores fica 13,5 cm à frente do eixo, então ela só reencontra a fita depois de 180°. Giro em pulsos de PWM para não derrubar a bandeja |
 | Ficar de frente para a mesa sem medir ângulo | Um "ramal" curto de fita, 13,5 cm antes da marca (sob o eixo): girando no lugar, o sensor do meio só o encontra depois de 90°. Mais 90° no mesmo sentido e ele volta à linha |
 | Robô alto e leve "empina" na arrancada | Partida suave no firmware (rampa de PWM de 0,5 s; frear continua imediato), pilhas (a peça mais pesada) na frente e um pé antitombo na traseira |
-| Mais espaço nas bandejas sem perder estabilidade | Coluna 50 mm para trás, "espinhas" de apoio embaixo das bandejas e conta do centro de massa (validada no modelo 3D) |
+| Mais espaço nas bandejas sem perder estabilidade | Coluna 50 mm para trás e conta do centro de massa (validada no modelo 3D) |
+| Saber que o cliente retirou o pedido, sem ele precisar fazer nada | **Balança embaixo da bandeja**: célula de carga de 500 g + HX711, com tara automática no balcão. O peso tem um caminho só (bandeja → "aranha" → célula → base presa na coluna): a bandeja não encosta em mais nada, conferido no modelo 3D. Botão verde como reserva para pedidos levíssimos |
 | Carcaça que precisa se adaptar às medidas reais | Modelo paramétrico: um único `medidas.txt` gera STEP (Fusion 360), STL e o arquivo OpenSCAD |
 
 ## Carcaça 3D
@@ -91,10 +92,11 @@ As duas telas acima são do **simulador**: o painel é exatamente o mesmo HTML q
 
 Detalhes em [`carcaca/LEIA-ME.md`](carcaca/LEIA-ME.md).
 
-**Coluna recuada:** em relação à primeira versão (coluna no centro), +71% de área livre na bandeja de baixo e o dobro na de cima. A comparação e a análise de estabilidade estão no mesmo LEIA-ME.
+**Uma bandeja + balança:** a bandeja (15 × 19 cm) fica solta em cima de uma peça em X (a "aranha"), parafusada numa célula de carga. Ela não tem fio nem parafuso: sai inteira para lavar. O botão verde fica no "nariz" da frente, com os fios escondidos.
 
 <p align="center">
-  <img src="carcaca/imagens/v2_1_comparacao_3-4.png" alt="Comparação da primeira versão (coluna no centro) com a atual (coluna recuada), no mesmo ângulo de câmera" width="640">
+  <img src="carcaca/imagens/balanca_sem_bandeja.png" alt="A balança sem a bandeja: célula de carga presa na coluna, aranha em X e o botão verde no nariz da frente" width="320">
+  <img src="carcaca/imagens/botao_nariz.png" alt="O botão verde no nariz da frente da bandeja, com o capô escondendo os fios" width="320">
 </p>
 
 ## Estrutura
@@ -104,7 +106,7 @@ src/           firmware C++ (PlatformIO, Arduino core): camera, motors, web_serv
 simulador/     robô virtual em Node.js (mesma API, vídeo gerado por software) + página de pedidos
 carcaca/       carcaça 3D paramétrica (CadQuery + OpenSCAD): STEP, STL e bandejas de impressão (.3mf)
 maquete/       "salão" em miniatura para imprimir em 3D: mesas, cadeiras e balcão econômico (paramétricos)
-docs/          guia ilustrado da carcaça e imagens
+docs/          imagens e animações do README
 *.md           guia passo a passo, lista de compras, manual de montagem
 ```
 
@@ -131,7 +133,7 @@ Passo a passo completo: [`GUIA_PASSO_A_PASSO.md`](GUIA_PASSO_A_PASSO.md).
 ## Hardware
 
 AI-Thinker ESP32-CAM (OV2640/OV3660) · driver MX1508 · 2 motores TT 3–6 V · chassi 2WD · 2× 18650 · buck LM2596.
-Garçom autônomo (Fase 5): ESP32 DevKit · 5 sensores de linha TCRT5000 · sensor laser VL53L0X · DFPlayer Mini + alto-falante · botão verde.
+Garçom autônomo (Fase 5): ESP32 DevKit · 5 sensores de linha TCRT5000 · sensor laser VL53L0X · célula de carga 500 g + HX711 · DFPlayer Mini + alto-falante · botão verde.
 Lista completa: [`lista_compras_detalhada.md`](lista_compras_detalhada.md) · Montagem: [`manual_montagem_fisica.md`](manual_montagem_fisica.md).
 
 ## Autor
